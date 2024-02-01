@@ -1,0 +1,25 @@
+FROM almalinux:8
+
+ARG python
+ARG release
+
+ENV PYTHON_VERSION=${python}
+
+RUN yum -y update \
+     && yum -y install git curl bzip2 libgfortran which zsh \
+     && curl -sSL https://github.com/conda-forge/miniforge/releases/download/23.3.1-1/Mambaforge-Linux-x86_64.sh -o /tmp/mambaforge.sh \
+     && bash /tmp/mambaforge.sh -bfp /usr/local \
+     && rm -rf /tmp/mambaforge.sh \
+     && mamba update mamba \
+     && mamba clean --all --yes \
+     && rpm -e --nodeps curl bzip2 \
+     && yum clean all
+
+COPY environment.yml /
+
+RUN mamba install --yes python=${PYTHON_VERSION} \
+     && mamba env update --file /environment.yml \
+     && mamba clean -y --all
+
+# Make a symbolic link between installation /opt/conda/etc/grid-security and actual directory /etc/grid-security
+RUN ln -s /opt/conda/etc/grid-security /etc/grid-security
