@@ -22,12 +22,12 @@ jobs:
       fail-fast: false
       matrix:
         image_dir: [basev0, dask]
-        flavour: [alma8, ubuntu]
+        distro: [alma8, ubuntu]
         python: ["3.9", "3.10", "3.11"]
         exclude:
           - image_dir: alma8
             python: 3.9
-    name: ${{ matrix.image_dir }}-${{ matrix.flavour }}-${{ matrix.python }}
+    name: ${{ matrix.image_dir }}-${{ matrix.distro }}-${{ matrix.python }}
     runs-on: ubuntu-latest
     steps:
 
@@ -62,9 +62,9 @@ jobs:
       env:
         image_dir: ${{ matrix.image_dir }}
         python: ${{ matrix.python }}
-        flavour: ${{ matrix.flavour }}
+        distro: ${{ matrix.distro }}
       run: |
-        image="coffeateam/coffea-${image_dir}-${flavour}"
+        image="coffeateam/coffea-${image_dir}-${distro}"
         
         if [ ${image_dir} == 'basev0' ]; then
           tag="${image}:${releasev0}-py${python}"
@@ -81,8 +81,8 @@ jobs:
       with:
         load: true
         tags: ${{ steps.tags.outputs.tag }}
-        context: ${{ matrix.image_dir }}/${{ matrix.flavour }}
-        file: ${{ matrix.image_dir }}//${{ matrix.flavour }}/Dockerfile
+        context: ${{ matrix.image_dir }}/${{ matrix.distro }}
+        file: ${{ matrix.image_dir }}/${{ matrix.distro }}/Dockerfile
         build-args: |
           python=${{ matrix.python }}
           release=${{ env.release }}
