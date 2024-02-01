@@ -1,2 +1,2 @@
 # af-images
-Coffea images for AFs and not only
+Docker image for Coffea Columnar Object Framework For Effective Analysis
