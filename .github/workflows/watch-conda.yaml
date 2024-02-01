@@ -1,0 +1,55 @@
+name: Check for new versions of Coffea on Conda Forge
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    if: github.repository == 'coffeateam/docker-coffea-base'
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get current Coffea version
+        id: current_version
+        uses: the-coding-turtle/ga-yaml-parser@v0.1.2
+        with:
+          file: .github/workflows/gh-ci.yml
+
+      - name: Get latest Coffea version
+        id: latest_version
+        uses: jacobtomlinson/gha-anaconda-package-version@0.1.3
+        with:
+          org: "conda-forge"
+          package: "coffea"
+
+      - name: Find and Replace Release 0.x release
+        if: ${{ ! startsWith(${{ steps.latest_version.outputs.version }}, '0.') }}
+        uses: jacobtomlinson/gha-find-replace@2.0.0
+        with:
+          find: ${{ steps.current_version.outputs.env_releasev0 }}
+          replace: ${{ steps.latest_version.outputs.version }}
+          regex: false
+
+      - name: Find and Replace Release Calver release
+        if: ${{ ! startsWith( ${{ steps.latest_version.outputs.version }}, '20') }}
+        uses: jacobtomlinson/gha-find-replace@2.0.0
+        with:
+          find: ${{ steps.current_version.outputs.env_release }}
+          replace: ${{ steps.latest_version.outputs.version }}
+          regex: false
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN  }}
+          commit-message: "Update Coffea version to ${{ steps.latest_version.outputs.version }}"
+          title: "Update Coffea version to ${{ steps.latest_version.outputs.version }}"
+          reviewers: "oshadura"
+          author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          branch: "upgrade-coffea-version"
+          body: |
+            A new Coffea version has been detected.
+
+            Updated `Dockerfile`s to use `${{ steps.latest_version.outputs.version }}`.
