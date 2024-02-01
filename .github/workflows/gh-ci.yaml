@@ -70,6 +70,7 @@ jobs:
           tag="${image}:${releasev0}-py${python}"
         else
           tag="${image}:${release}-py${python}"
+        fi
         
         tags=${image}:latest-py${python},$tag
 
