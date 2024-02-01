@@ -1,0 +1,56 @@
+name: base
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  # python version specified in Dockerfile
+  - gxx
+  - voms # x509 proxy system
+  - ca-policy-lcg # WLCG trusted CAs
+  - xrootd
+  - htcondor
+    # jupyter-related
+  - jupyterlab
+  - ipympl
+  - dask_labextension
+  - dask-jobqueue
+  - bokeh
+    # core scipy
+    #- nomkl # no Intel math kernel library, reduces image size
+  - numpy
+  - scipy
+  - pandas
+    # compression
+  - lz4
+  - python-xxhash
+  - zstandard
+    # file formats
+  - h5py
+  - uproot=5
+    # misc.
+  - pytables
+  - python-rapidjson
+  - geventhttpclient
+  - brotli
+  - correctionlib
+  - python-graphviz
+    # scikit-hep
+  - awkward
+  - vector
+  - hist
+    # ML
+  - xgboost
+  - pytorch=1.12
+  - torch-scatter
+  - pip
+  - pip:
+    - fastjet # to be added to conda-forge: https://github.com/scikit-hep/fastjet/issues/133
+    - tritonclient[all]
+    - tflite-runtime==2.14.0
+    - onnxruntime
+    - torch-sparse
+    - torch-cluster
+    - torch-spline-conv
+    - torch-geometric
+    - fsspec-xrootd
+    - coffea==v2024.1.2 # release candidates are not in conda-forge
