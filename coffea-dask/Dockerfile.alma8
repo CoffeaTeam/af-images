@@ -15,10 +15,10 @@ RUN yum -y update \
      && rpm -e --nodeps curl bzip2 \
      && yum clean all
 
-COPY environment.yml /
+COPY environment.yaml /
 
 RUN mamba install --yes python=${PYTHON_VERSION} \
-     && mamba env update --file /environment.yml \
+     && mamba env update --file /environment.yaml \
      && mamba clean -y --all
 
 # Make a symbolic link between installation /opt/conda/etc/grid-security and actual directory /etc/grid-security
