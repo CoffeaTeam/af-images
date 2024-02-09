@@ -26,7 +26,7 @@ dependencies:
   - zstandard
     # file formats
   - h5py
-  - uproot=5
+  - uproot
     # misc.
   - pytables
   - python-rapidjson
