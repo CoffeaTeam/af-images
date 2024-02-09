@@ -7,7 +7,7 @@ on:
 jobs:
   check-version:
     runs-on: ubuntu-latest
-    if: github.repository == 'coffeateam/docker-coffea-base'
+    if: github.repository == 'coffeateam/af-images'
 
     steps:
       - uses: actions/checkout@v2
@@ -26,7 +26,7 @@ jobs:
           package: "coffea"
 
       - name: Find and Replace Release 0.x release
-        if: ${{ ! startsWith(steps.latest_version.outputs.version, '0.') }}
+        if: ${{ startsWith(steps.latest_version.outputs.version, '0.') }}
         uses: jacobtomlinson/gha-find-replace@2.0.0
         with:
           find: ${{ steps.current_version.outputs.env_releasev0 }}
@@ -34,7 +34,7 @@ jobs:
           regex: false
 
       - name: Find and Replace Release Calver release
-        if: ${{ ! startsWith(steps.latest_version.outputs.version, '20') }}
+        if: ${{ startsWith(steps.latest_version.outputs.version, '20') }}
         uses: jacobtomlinson/gha-find-replace@2.0.0
         with:
           find: ${{ steps.current_version.outputs.env_release }}

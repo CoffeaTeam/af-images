@@ -43,6 +43,7 @@ dependencies:
   - pytorch=1.12
   - torch-scatter
   - pip
+  - coffea=0.7.22
   - pip:
     - fastjet # to be added to conda-forge: https://github.com/scikit-hep/fastjet/issues/133
     - tritonclient[all]
@@ -53,4 +54,3 @@ dependencies:
     - torch-spline-conv
     - torch-geometric
     - fsspec-xrootd
-    - coffea==2024.1.2 # release candidates are not in conda-forge
