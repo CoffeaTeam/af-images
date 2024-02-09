@@ -53,4 +53,4 @@ dependencies:
     - torch-spline-conv
     - torch-geometric
     - fsspec-xrootd
-    - coffea==v2024.1.2 # release candidates are not in conda-forge
+    - coffea==2024.1.2 # release candidates are not in conda-forge
