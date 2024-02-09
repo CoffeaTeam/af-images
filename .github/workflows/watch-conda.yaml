@@ -11,7 +11,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Get current Coffea version
+
+      - name: Get current Coffea version, both v0 and Calver
         id: current_version
         uses: the-coding-turtle/ga-yaml-parser@v0.1.2
         with:
