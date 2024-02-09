@@ -14,7 +14,7 @@ jobs:
         with:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           strategy: regex
-          regex_pattern: 'releasev0: \"\d+\.\d+\.\d+\"'
+          regex_pattern: 'releasev0: \"0.\d+\.\d+\"'
           root: ".github/workflows/gh-ci.yml"
       - uses: butlerlogic/action-autotag@stable
         with:

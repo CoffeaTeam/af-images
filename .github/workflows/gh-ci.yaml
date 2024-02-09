@@ -12,7 +12,7 @@ env:
   DOCKER_ORG: coffeateam
   GITHUB_SHA: ${{ github.sha }}
   GITHUB_REF: ${{ github.ref }}
-  release: "0.7.22"
+  release: "2024.1.0"
   releasev0: "0.7.22"
 
 jobs:
@@ -21,11 +21,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image_dir: [basev0, dask]
+        image_dir: [coffea-basev0, coffea-dask]
         distro: [alma8, ubuntu]
         python: ["3.9", "3.10", "3.11"]
         exclude:
-          - image_dir: alma8
+          - distro: alma8
             python: 3.9
     name: ${{ matrix.image_dir }}-${{ matrix.distro }}-${{ matrix.python }}
     runs-on: ubuntu-latest
@@ -63,10 +63,12 @@ jobs:
         image_dir: ${{ matrix.image_dir }}
         python: ${{ matrix.python }}
         distro: ${{ matrix.distro }}
+        releasev0: ${{ env.releasev0 }}
+        release: ${{ env.release }}
       run: |
-        image="coffeateam/coffea-${image_dir}-${distro}"
+        image="coffeateam/${image_dir}-${distro}"
         
-        if [ ${image_dir} == 'basev0' ]; then
+        if [ ${image_dir} == 'coffea-basev0' ]; then
           tag="${image}:${releasev0}-py${python}"
         else
           tag="${image}:${release}-py${python}"
@@ -77,13 +79,26 @@ jobs:
         echo "::set-output name=tag::${tag}"
         echo "::set-output name=tags::${tags}"
 
-    - name: Build
+    - name: Build base v0
+      if: ${{ matrix.image_dir }} == 'coffea-basev0'
       uses: docker/build-push-action@v5
       with:
         load: true
         tags: ${{ steps.tags.outputs.tag }}
-        context: ${{ matrix.image_dir }}/${{ matrix.distro }}
-        file: ${{ matrix.image_dir }}/${{ matrix.distro }}/Dockerfile
+        context: ${{ matrix.image_dir }}
+        file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
+        build-args: |
+          python=${{ matrix.python }}
+          release=${{ env.releasev0 }}
+
+    - name: Build base v1
+      if: ${{ matrix.image_dir }} != 'coffea-basev0'
+      uses: docker/build-push-action@v5
+      with:
+        load: true
+        tags: ${{ steps.tags.outputs.tag }}
+        context: ${{ matrix.image_dir }}
+        file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
           python=${{ matrix.python }}
           release=${{ env.release }}
@@ -114,14 +129,29 @@ jobs:
         docker run --rm -v ${{ github.workspace }}:/tmp/workspace ${tag} \
         sh -c "pip install -U pytest && cd tmp/workspace && pytest"
 
-    - name: Build and push
+    - name: Build and push v0
+      if: ${{ matrix.image_dir }} != 'coffea-basev0'
       uses: docker/build-push-action@v5
       with:
-        context: ${{ matrix.image_dir }}
-        file: ${{ matrix.image_dir }}/Dockerfile
         platforms: linux/amd64
         push: ${{  github.event_name == 'push' }}
-        tags: ${{ steps.tags.outputs.tags }}
+        tags: ${{ steps.tags.outputs.tag }}
+        context: ${{ matrix.image_dir }}
+        file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
           python=${{ matrix.python }}
           release=${{ env.release }}
+
+    - name: Build and push v1
+      if: ${{ matrix.image_dir }} == 'coffea-basev0'
+      uses: docker/build-push-action@v5
+      with:
+        platforms: linux/amd64
+        push: ${{  github.event_name == 'push' }}
+        tags: ${{ steps.tags.outputs.tag }}
+        context: ${{ matrix.image_dir }}
+        file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
+        build-args: |
+          python=${{ matrix.python }}
+          release=${{ env.releasev0 }}
+
