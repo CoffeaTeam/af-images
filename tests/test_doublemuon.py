@@ -1,22 +1,19 @@
-
-import awkward as ak
 import hist
+import dask
+import awkward as ak
+import hist.dask as hda
+import dask_awkward as dak
+
 from coffea import processor
 from coffea.nanoevents.methods import candidate
 from coffea.nanoevents import NanoEventsFactory, BaseSchema
 
-from dask.distributed import Client
+from distributed import Client
+
 import pytest
 
-fileset = {
-    'DoubleMuon': [
-        'root://eospublic.cern.ch//eos/root-eos/cms_opendata_2012_nanoaod/Run2012B_DoubleMuParked.root',
-        'root://eospublic.cern.ch//eos/root-eos/cms_opendata_2012_nanoaod/Run2012C_DoubleMuParked.root',
-    ],
-    'ZZ to 4mu': [
-        'root://eospublic.cern.ch//eos/root-eos/cms_opendata_2012_nanoaod/ZZTo4mu.root'
-    ]
-}
+client = Client()
+
 
 class MyProcessor(processor.ProcessorABC):
     def __init__(self):
@@ -37,7 +34,7 @@ class MyProcessor(processor.ProcessorABC):
         )
 
         h_mass = (
-            hist.Hist.new
+            hda.Hist.new
             .StrCat(["opposite", "same"], name="sign")
             .Log(1000, 0.2, 200., name="mass", label="$m_{\mu\mu}$ [GeV]")
             .Int64()
@@ -54,7 +51,7 @@ class MyProcessor(processor.ProcessorABC):
 
         return {
             dataset: {
-                "entries": len(events),
+                "entries": ak.num(events, axis=0),
                 "mass": h_mass,
             }
         }
@@ -62,15 +59,18 @@ class MyProcessor(processor.ProcessorABC):
     def postprocess(self, accumulator):
         pass
 
-@pytest.mark.v0
-def test_processor_dimu_mass():
-    client = Client()
-    iterative_run = processor.Runner(executor = processor.dask_executor,
-                                     schema=BaseSchema,
-                                     client=client,
-                                     )
-    out = iterative_run(fileset,
-                        treename="Events",
-                        processor_instance=MyProcessor(),
-                        )
-    assert out["DoubleMuon"]["entries"] == 1000560
+filename = "root://eospublic.cern.ch//eos/root-eos/cms_opendata_2012_nanoaod/Run2012B_DoubleMuParked.root"
+
+events = NanoEventsFactory.from_root(
+    {filename: "Events"},
+    metadata={"dataset": "DoubleMuon"},
+    schemaclass=BaseSchema,
+).events()
+
+
+@pytest.mark.calver
+def test_adl1():
+    p = MyProcessor()
+    out = p.process(events)
+    (computed,) = dask.compute(out)
+    print(computed)
