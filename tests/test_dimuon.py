@@ -5,6 +5,8 @@ from coffea import processor
 from coffea.nanoevents.methods import candidate
 from coffea.nanoevents import NanoEventsFactory, BaseSchema
 
+from dask.distributed import Client
+
 fileset = {
     'DoubleMuon': [
         'root://eospublic.cern.ch//eos/root-eos/cms_opendata_2012_nanoaod/Run2012B_DoubleMuParked.root',
@@ -59,11 +61,12 @@ class MyProcessor(processor.ProcessorABC):
     def postprocess(self, accumulator):
         pass
 
-#@pytest.mark.coffeav0
+@pytest.mark.coffeav0
 def test_processor_dimu_mass():
-    iterative_run = processor.Runner(executor = processor.IterativeExecutor(compression=None),
+    client = Client()
+    iterative_run = processor.Runner(executor = processor.dask_executor,
                                      schema=BaseSchema,
-                                     maxchunks=10
+                                     client=client,
                                      )
     out = iterative_run(fileset,
                         treename="Events",
