@@ -122,12 +122,22 @@ jobs:
           exit 1
         fi
 
-    - name: Test Pytest environement
+    - name: Test Pytest environement v0
+      if: ${{ matrix.image_dir == 'coffea-basev0' }}
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
         docker run --rm -v ${{ github.workspace }}:/tmp/workspace ${tag} \
-        sh -c "pip install -U pytest && cd tmp/workspace && pytest"
+        sh -c "pip install -U pytest && cd tmp/workspace && pytest -m v0"
+
+    - name: Test Pytest environement CalVer
+      if: ${{ matrix.image_dir != 'coffea-basev0' }}
+      env:
+        tag: ${{ steps.tags.outputs.tag }}
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/tmp/workspace ${tag} \
+        sh -c "pip install -U pytest && cd tmp/workspace && pytest -m calver"
+
 
     - name: Build and push v0
       if: ${{ matrix.image_dir != 'coffea-basev0' }}
