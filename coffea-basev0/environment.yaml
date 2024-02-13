@@ -26,7 +26,7 @@ dependencies:
   - zstandard
     # file formats
   - h5py
-  - uproot
+  - uproot<5
     # misc.
   - pytables
   - python-rapidjson
@@ -35,7 +35,7 @@ dependencies:
   - correctionlib
   - python-graphviz
     # scikit-hep
-  - awkward
+  - awkward<2
   - vector
   - hist
     # ML
