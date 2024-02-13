@@ -40,7 +40,7 @@ dependencies:
   - hist
     # ML
   - xgboost
-  - pytorch=1.12
+  - pytorch
   - torch-scatter
   - pip
   - coffea=2024.1.2
