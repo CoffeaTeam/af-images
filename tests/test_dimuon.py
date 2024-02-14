@@ -1,21 +1,21 @@
-
-import awkward as ak
 import hist
+import dask
+import awkward as ak
+
 from coffea import processor
 from coffea.nanoevents.methods import candidate
-from coffea.nanoevents import NanoEventsFactory, BaseSchema
+from coffea.nanoevents import BaseSchema, NanoAODSchema
 
 from dask.distributed import Client
 import pytest
 
 fileset = {
-    'DoubleMuon': [
-        'root://eospublic.cern.ch//eos/root-eos/cms_opendata_2012_nanoaod/Run2012B_DoubleMuParked.root',
-        'root://eospublic.cern.ch//eos/root-eos/cms_opendata_2012_nanoaod/Run2012C_DoubleMuParked.root',
-    ],
-    'ZZ to 4mu': [
-        'root://eospublic.cern.ch//eos/root-eos/cms_opendata_2012_nanoaod/ZZTo4mu.root'
-    ]
+    "DoubleMuon": {
+        "files": {
+            "root://eospublic.cern.ch//eos/root-eos/cms_opendata_2012_nanoaod/Run2012B_DoubleMuParked.root",
+            "root://eospublic.cern.ch//eos/root-eos/cms_opendata_2012_nanoaod/Run2012C_DoubleMuParked.root",
+        }
+        }
 }
 
 class MyProcessor(processor.ProcessorABC):
@@ -54,7 +54,7 @@ class MyProcessor(processor.ProcessorABC):
 
         return {
             dataset: {
-                "entries": len(events),
+                "entries": ak.num(events, axis=0),
                 "mass": h_mass,
             }
         }
@@ -65,12 +65,34 @@ class MyProcessor(processor.ProcessorABC):
 @pytest.mark.v0
 def test_processor_dimu_mass():
     client = Client()
-    iterative_run = processor.Runner(executor = processor.dask_executor,
-                                     schema=BaseSchema,
-                                     client=client,
-                                     )
-    out = iterative_run(fileset,
-                        treename="Events",
-                        processor_instance=MyProcessor(),
-                        )
+    executor = processor.DaskExecutor(client=client)
+    run = processor.Runner(executor=executor,
+                           schema=BaseSchema)
+    out = run(fileset,
+              treename="Events",
+              processor_instance=MyProcessor())
+    assert out["DoubleMuon"]["entries"] == 1000560
+
+@pytest.mark.calver
+def test_adl1():
+    from coffea.dataset_tools import (
+        apply_to_fileset,
+        max_chunks,
+        preprocess,
+    )
+    #Still not sure where it is used (?)
+    #client = Client()
+    dataset_runnable = preprocess(
+        fileset,
+        align_clusters=False,
+        files_per_batch=10,
+        skip_bad_files=True,
+        save_form=False,
+    )
+    to_compute = apply_to_fileset(
+                MyProcessor(),
+                max_chunks(dataset_runnable, 300),
+                schemaclass=BaseSchema,
+            )
+    (out,) = dask.compute(to_compute)
     assert out["DoubleMuon"]["entries"] == 1000560
