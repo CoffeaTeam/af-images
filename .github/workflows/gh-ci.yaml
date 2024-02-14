@@ -24,9 +24,9 @@ jobs:
         image_dir: [coffea-basev0, coffea-dask]
         distro: [alma8]
         python: ["3.9", "3.10", "3.11"]
-        #exclude:
-        #  - distro: alma8
-        #    python: 3.9
+        exclude:
+          - distro: alma8
+            python: 3.9
     name: ${{ matrix.image_dir }}-${{ matrix.distro }}-${{ matrix.python }}
     runs-on: ubuntu-latest
     steps:
