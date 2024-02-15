@@ -43,7 +43,7 @@ dependencies:
   - pytorch
   - torch-scatter
   - pip
-  - coffea=2024.1.2
+  - coffea=2024.2.1
   - pip:
     - fastjet # to be added to conda-forge: https://github.com/scikit-hep/fastjet/issues/133
     - tritonclient[all]
