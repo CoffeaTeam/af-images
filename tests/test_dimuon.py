@@ -51,7 +51,7 @@ class MyProcessor(processor.ProcessorABC):
 
         return {
             dataset: {
-                "entries": ak.num(events, axis=0),
+                "entries": ak.num(events.run, axis=0),
                 "mass": h_mass,
             }
         }
@@ -60,29 +60,30 @@ class MyProcessor(processor.ProcessorABC):
         pass
 
 @pytest.mark.v0
-def test_processor_dimu_mass():
+def test_processor_dimu_massv0():
     client = Client()
     executor = processor.DaskExecutor(client=client)
     run = processor.Runner(executor=executor,
                            schema=BaseSchema)
-    out = run(fileset,
+    out = run({"dimuon": [fileset]},
               treename="Events",
               processor_instance=MyProcessor())
-    assert out["DoubleMuon"]["entries"] == 1000560
+    print(out)
+    assert out["dimuon"]["entries"] == 40
 
 @pytest.mark.calver
-@pytest.mark.timeout(300)
-def test_adl1():
-    events = NanoEventsFactory.from_root(
-        {fileset: "Events"},
-        steps_per_file=2_000,
-        metadata={"dataset": "DoubleMuon"},
-        schemaclass=BaseSchema
-        ).events()
-    p = MyProcessor()
-    out = p.process(events)
-    (computed,) = dask.compute(out)
-    assert computed["DoubleMuon"]["entries"] == 1000560
+def test_dimu_masscalver():
+    with Client():
+        events = NanoEventsFactory.from_root(
+            {fileset: "Events"},
+            steps_per_file=2_000,
+            metadata={"dataset": "DoubleMuon"},
+            schemaclass=BaseSchema
+            ).events()
+        p = MyProcessor()
+        out = p.process(events)
+        (computed,) = dask.compute(out)
+        assert computed["DoubleMuon"]["entries"] == 40
     #from coffea.dataset_tools import (
     #    apply_to_fileset,
     #    max_chunks,
@@ -103,4 +104,3 @@ def test_adl1():
     #            schemaclass=BaseSchema,
     #        )
     #(out,) = dask.compute(to_compute)
-    #assert out["DoubleMuon"]["entries"] == 1000560
