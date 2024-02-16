@@ -33,6 +33,9 @@ jobs:
             python: 3.11
     name: ${{ matrix.image_dir }}-${{ matrix.distro }}-${{ matrix.python }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
 
     - name: Check out code
@@ -53,13 +56,13 @@ jobs:
         username: ${{ secrets.DOCKERHUB_ACCOUNT }}
         password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
 
-    #- name: Login to GitHub Container Registry
-    #  uses: docker/login-action@v1
-    #  if: github.event_name == 'push'
-    #  with:
-    #    registry: ghcr.io
-    #    username: ${{ github.actor }}
-    #    password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v1
+      if: github.event_name == 'push'
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Generate tags
       id: tags
