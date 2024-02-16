@@ -27,6 +27,8 @@ jobs:
         exclude:
           - distro: alma8
             python: 3.9
+          - distro: coffea-basev0
+            python: 3.11
     name: ${{ matrix.image_dir }}-${{ matrix.distro }}-${{ matrix.python }}
     runs-on: ubuntu-latest
     steps:
