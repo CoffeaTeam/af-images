@@ -64,6 +64,14 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Login to Harbor Hub
+      if: success() && github.event_name != 'pull_request'
+      uses: docker/login-action@v2
+      with:
+        registry: hub.opensciencegrid.org
+        username: ${{ secrets.HARBOR_USER }}
+        password: ${{ secrets.HARBOR_PASSWORD }}
+
     - name: Generate tags
       id: tags
       env:
@@ -74,7 +82,7 @@ jobs:
         release: ${{ env.release }}
         python_latest: ${{ env.python_latest}}
       run: |
-        image="coffeateam/${image_dir}-${distro}"
+        image="ghcr.io/coffeateam/${image_dir}-${distro}"
         
         if [ ${image_dir} == 'coffea-base' ]; then
           tag="${image}:${releasev0}-py${python}"
@@ -96,7 +104,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         load: true
-        tags: ${{ steps.tags.outputs.tag }}
+        tags: ${{ steps.tags.outputs.tags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
@@ -145,7 +153,7 @@ jobs:
     - name: Test Pytest environement CalVer
       if: ${{ matrix.image_dir != 'coffea-base' }}
       env:
-        tag: ${{ steps.tags.outputs.tag }}
+        tag: ${{ steps.tags.outputs.tags }}
       run: |
         docker run --rm -v ${{ github.workspace }}:/tmp/workspace ${tag} \
         sh -c "pip install -U pytest && cd tmp/workspace && pytest -m calver"
