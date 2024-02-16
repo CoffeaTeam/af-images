@@ -80,10 +80,10 @@ jobs:
         fi
 
         if [ ${python} == ${python_latest} ]; then
-          tag=${image}:latest,$tag
+          latest=${image}:latest
         fi
         
-        tags=${image}:latest-py${python},$tag
+        tags=$tag,${image}:latest-py${python},$latest
 
         echo "::set-output name=tag::${tag}"
         echo "::set-output name=tags::${tags}"
