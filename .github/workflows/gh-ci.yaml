@@ -12,6 +12,8 @@ env:
   DOCKER_ORG: coffeateam
   GITHUB_SHA: ${{ github.sha }}
   GITHUB_REF: ${{ github.ref }}
+  # Update each time there is added latest python: it will be used for `latest` tag
+  python_latest: "3.11"
   release: "2024.1.1"
   releasev0: "0.7.22"
 
@@ -67,6 +69,7 @@ jobs:
         distro: ${{ matrix.distro }}
         releasev0: ${{ env.releasev0 }}
         release: ${{ env.release }}
+        python_latest: ${{ env.python_latest}}
       run: |
         image="coffeateam/${image_dir}-${distro}"
         
@@ -74,6 +77,10 @@ jobs:
           tag="${image}:${releasev0}-py${python}"
         else
           tag="${image}:${release}-py${python}"
+        fi
+
+        if [ ${python} == ${python_latest} ]; then
+          tag=${image}:latest,$tag
         fi
         
         tags=${image}:latest-py${python},$tag
