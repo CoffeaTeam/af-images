@@ -116,7 +116,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         load: true
-        tags: ${{ steps.tags.outputs.tag }}
+        tags: ${{ steps.tags.outputs.tags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
@@ -153,7 +153,7 @@ jobs:
     - name: Test Pytest environement CalVer
       if: ${{ matrix.image_dir != 'coffea-base' }}
       env:
-        tag: ${{ steps.tags.outputs.tags }}
+        tag: ${{ steps.tags.outputs.tag }}
       run: |
         docker run --rm -v ${{ github.workspace }}:/tmp/workspace ${tag} \
         sh -c "pip install -U pytest && cd tmp/workspace && pytest -m calver"
@@ -165,7 +165,7 @@ jobs:
       with:
         platforms: linux/amd64
         push: ${{  github.event_name == 'push' }}
-        tags: ${{ steps.tags.outputs.tag }}
+        tags: ${{ steps.tags.outputs.tags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
@@ -178,7 +178,7 @@ jobs:
       with:
         platforms: linux/amd64
         push: ${{  github.event_name == 'push' }}
-        tags: ${{ steps.tags.outputs.tag }}
+        tags: ${{ steps.tags.outputs.tags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
