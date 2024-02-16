@@ -16,7 +16,7 @@ jobs:
         id: current_version
         uses: the-coding-turtle/ga-yaml-parser@v0.1.2
         with:
-          file: .github/workflows/gh-ci.yml
+          file: .github/workflows/gh-ci.yaml
 
       - name: Get latest Coffea version
         id: latest_version
