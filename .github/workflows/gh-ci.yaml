@@ -23,13 +23,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image_dir: [coffea-basev0, coffea-dask]
+        image_dir: [coffea-base, coffea-dask]
         distro: [almalinux8]
         python: ["3.9", "3.10", "3.11"]
         exclude:
           - distro: almalinux8
             python: 3.9
-          - distro: coffea-basev0
+          - distro: coffea-base
             python: 3.11
     name: ${{ matrix.image_dir }}-${{ matrix.distro }}-${{ matrix.python }}
     runs-on: ubuntu-latest
@@ -73,7 +73,7 @@ jobs:
       run: |
         image="coffeateam/${image_dir}-${distro}"
         
-        if [ ${image_dir} == 'coffea-basev0' ]; then
+        if [ ${image_dir} == 'coffea-base' ]; then
           tag="${image}:${releasev0}-py${python}"
         else
           tag="${image}:${release}-py${python}"
@@ -89,7 +89,7 @@ jobs:
         echo "::set-output name=tags::${tags}"
 
     - name: Build base v0
-      if: ${{ matrix.image_dir == 'coffea-basev0' }}
+      if: ${{ matrix.image_dir == 'coffea-base' }}
       uses: docker/build-push-action@v5
       with:
         load: true
@@ -101,7 +101,7 @@ jobs:
           releasev0=${{ env.releasev0 }}
 
     - name: Build base v1
-      if: ${{ matrix.image_dir != 'coffea-basev0' }}
+      if: ${{ matrix.image_dir != 'coffea-base' }}
       uses: docker/build-push-action@v5
       with:
         load: true
@@ -132,7 +132,7 @@ jobs:
 #        fi
 
     - name: Test Pytest environement v0
-      if: ${{ matrix.image_dir == 'coffea-basev0' }}
+      if: ${{ matrix.image_dir == 'coffea-base' }}
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
@@ -140,7 +140,7 @@ jobs:
         sh -c "pip install -U pytest && cd tmp/workspace && pytest -m v0"
 
     - name: Test Pytest environement CalVer
-      if: ${{ matrix.image_dir != 'coffea-basev0' }}
+      if: ${{ matrix.image_dir != 'coffea-base' }}
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
@@ -149,7 +149,7 @@ jobs:
 
 
     - name: Build and push v0
-      if: ${{ matrix.image_dir != 'coffea-basev0' }}
+      if: ${{ matrix.image_dir != 'coffea-base' }}
       uses: docker/build-push-action@v5
       with:
         platforms: linux/amd64
@@ -162,7 +162,7 @@ jobs:
           release=${{ env.release }}
 
     - name: Build and push v1
-      if: ${{ matrix.image_dir == 'coffea-basev0' }}
+      if: ${{ matrix.image_dir == 'coffea-base' }}
       uses: docker/build-push-action@v5
       with:
         platforms: linux/amd64
