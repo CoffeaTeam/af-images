@@ -9,6 +9,7 @@ dependencies:
   - ca-policy-lcg # WLCG trusted CAs
   - xrootd
   - htcondor
+  - curl
     # jupyter-related
   - jupyterlab
   - ipympl
