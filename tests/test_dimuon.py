@@ -76,7 +76,6 @@ def test_dimu_masscalver():
     with Client():
         events = NanoEventsFactory.from_root(
             {fileset: "Events"},
-            steps_per_file=2_000,
             metadata={"dataset": "DoubleMuon"},
             schemaclass=BaseSchema
             ).events()
