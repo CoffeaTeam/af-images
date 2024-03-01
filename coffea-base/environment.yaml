@@ -46,6 +46,7 @@ dependencies:
   - torch-scatter
   - pip
   - coffea=0.7.22
+  - rucio-clients
   - pip:
     - fastjet==3.4.0.1 # LAST VERSION workking with awkward1
     - tritonclient[all]
