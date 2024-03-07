@@ -50,7 +50,7 @@ jobs:
           regex: false
 
       - name: Find and Replace Release Calver release
-        if: ${{ startsWith(steps.latest_version.outputs.version, '0.') }}
+        if: ${{ startsWith(steps.latest_version.outputs.version, '20') }}
         uses: jacobtomlinson/gha-find-replace@2.0.0
         with:
           find: "coffea==*"
