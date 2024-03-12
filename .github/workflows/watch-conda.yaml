@@ -39,8 +39,8 @@ jobs:
         if: ${{ startsWith(steps.latest_version.outputs.version, '0.') }}
         uses: jacobtomlinson/gha-find-replace@2.0.0
         with:
-          find: ${{ steps.current_version.outputs.env_releasev0 }}
-          replace: ${{ steps.latest_version.outputs.version }}
+          find: coffea=${{ steps.current_version.outputs.env_releasev0 }}
+          replace: coffea=${{ steps.latest_version.outputs.version }}
           include: "coffea-base/**"
 
       - name: Find and Replace Release Calver release
@@ -55,8 +55,8 @@ jobs:
         if: ${{ startsWith(steps.latest_version.outputs.version, '20') }}
         uses: jacobtomlinson/gha-find-replace@2.0.0
         with:
-          find: ${{ steps.current_version.outputs.env_release }}
-          replace: ${{ steps.latest_version.outputs.version }}
+          find: coffea=${{ steps.current_version.outputs.env_release }}
+          replace: coffea=${{ steps.latest_version.outputs.version }}
           include: "coffea-dask/**"
 
       - name: Create Pull Request
