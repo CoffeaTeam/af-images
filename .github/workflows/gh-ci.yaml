@@ -14,8 +14,8 @@ env:
   GITHUB_REF: ${{ github.ref }}
   # Update each time there is added latest python: it will be used for `latest` tag
   python_latest: "3.11"
-  release: "2024.1.1"
-  releasev0: "0.7.22"
+  release: 2024.1.1
+  releasev0: 0.7.22
 
 jobs:
 
@@ -83,6 +83,7 @@ jobs:
         python_latest: ${{ env.python_latest}}
       run: |
         image="coffeateam/${image_dir}-${distro}"
+        image_default="coffeateam/${image_dir}"
         
         if [ ${image_dir} == 'coffea-base' ]; then
           tag="${image}:${releasev0}-py${python}"
@@ -90,10 +91,20 @@ jobs:
           tag="${image}:${release}-py${python}"
         fi
 
+        ## Default image name for dask-base and dask-dask
+        #if [ ${distro} == 'alma8' ]; then
+        #  tag_default="${image_default}:${releasev0}-py${python},${image_default}:${release}-py${python}"
+        #fi
+
         if [ ${python} == ${python_latest} ]; then
           latest=${image}:latest
+          ## Let's overwrite latest
+          #if [ ${distro} == 'alma8'  ]; then
+          #  latest="${image_default}:latest
+          #fi
         fi
         
+        #tags=$tag,${image}:latest-py${python},$latest,$tag_default
         tags=$tag,${image}:latest-py${python},$latest
 
         echo "::set-output name=tag::${tag}"
