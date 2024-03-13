@@ -140,18 +140,18 @@ jobs:
       run: |
         docker run --rm ${tag} conda list --export
 
-#    - name: Make sure voms tools are working
-#      env:
-#        tag: ${{ steps.tags.outputs.tag }}
-#      run: |
-#        ERROR=$(docker run ${tag} voms-proxy-info 2>&1 > /dev/null; exit 0)
-#        TEST=$(echo -e "\nCouldn't find a valid proxy.\n")
+    - name: Make sure voms tools are working
+      env:
+        tag: ${{ steps.tags.outputs.tag }}
+      run: |
+        ERROR=$(docker run ${tag} voms-proxy-info 2>&1 > /dev/null; exit 0)
+        TEST=$(echo -e "\nCouldn't find a valid proxy.\n")
 
-#        if [ "$ERROR" == "$TEST" ]; then
-#          exit 0
-#        else
-#          exit 1
-#        fi
+        if [ "$ERROR" == "$TEST" ]; then
+          exit 0
+        else
+          exit 1
+        fi
 
     - name: Test Pytest environement v0
       if: ${{ matrix.image_dir == 'coffea-base' }}
