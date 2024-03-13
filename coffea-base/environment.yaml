@@ -14,6 +14,7 @@ dependencies:
   - ipympl
   - dask_labextension
   - dask-jobqueue
+  - dask-expr
   - bokeh
     # core scipy
     #- nomkl # no Intel math kernel library, reduces image size
