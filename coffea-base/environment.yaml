@@ -17,6 +17,8 @@ dependencies:
   - dask-jobqueue
   - dask-expr
   - bokeh
+  # Add workqueue
+  - ncctools
     # core scipy
     #- nomkl # no Intel math kernel library, reduces image size
   - numpy
