@@ -47,7 +47,7 @@ dependencies:
   - pytorch
   - torch-scatter
   - pip
-  - coffea=2024.4.0
+  - coffea=2024.4.1
   - rucio-clients
   - pip:
     - fastjet # to be added to conda-forge: https://github.com/scikit-hep/fastjet/issues/133
