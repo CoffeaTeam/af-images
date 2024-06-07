@@ -1,6 +1,7 @@
 name: base
 channels:
   - conda-forge
+  - pyg
   - pytorch
 dependencies:
   # python version specified in Dockerfile
@@ -49,13 +50,14 @@ dependencies:
   - pip
   - coffea=2024.4.1
   - rucio-clients
+    # pyg
+  - pyg
+  - pytorch-cluster
+  - pytorch-sparse
+  - pytorch-spline-conv
   - pip:
     - fastjet # to be added to conda-forge: https://github.com/scikit-hep/fastjet/issues/133
     - tritonclient[all]
     - tflite-runtime==2.14.0
     - onnxruntime
-    - torch-sparse
-    - torch-cluster
-    - torch-spline-conv
-    - torch-geometric
     - fsspec-xrootd
