@@ -1,4 +1,5 @@
-![CI/CD status](https://github.com/CoffeaTeam/af-images/workflows/PullRequest/badge.svg)
+# Docker images for Coffea Columnar Object Framework For Effective Analysis
+
 ![GitHub issues](https://img.shields.io/github/issues/coffeateam/af-images)
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/coffeateam/af-images)
 
