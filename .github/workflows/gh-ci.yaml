@@ -24,10 +24,12 @@ jobs:
       fail-fast: false
       matrix:
         image_dir: [coffea-base, coffea-dask]
-        distro: [almalinux8]
+        distro: [almalinux8, almalinux9]
         python: ["3.9", "3.10", "3.11"]
         exclude:
           - distro: almalinux8
+            python: 3.9
+          - distro: almalinux9
             python: 3.9
           - image_dir: coffea-base
             python: 3.11

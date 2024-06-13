@@ -1,0 +1,29 @@
+FROM almalinux:9
+
+ARG python
+ARG releasev0
+
+ENV PYTHON_VERSION=${python}
+
+RUN yum -y install epel-release \
+     && yum -y update \
+     && yum -y install git curl bzip2 libgfortran which \
+     && curl -sSL https://github.com/conda-forge/miniforge/releases/download/23.3.1-1/Mambaforge-Linux-x86_64.sh -o /tmp/mambaforge.sh \
+     && bash /tmp/mambaforge.sh -bfp /usr/local \
+     && rm -rf /tmp/mambaforge.sh \
+     && mamba update mamba \
+     && mamba clean --all --yes \
+     && rpm -e --nodeps curl bzip2 \
+     && yum clean all
+
+COPY environment.yaml /
+
+RUN mamba install --yes python=${PYTHON_VERSION} \
+     && mamba env update --file /environment.yaml \
+     && mamba clean -y --all
+
+# Make a symbolic link between installation /opt/conda/etc/grid-security and actual directory /etc/grid-security
+RUN ln -s /usr/local/etc/grid-security /etc/grid-security && \
+    curl -L https://github.com/opensciencegrid/osg-vo-config/archive/refs/heads/master.tar.gz | \
+    tar -xz --strip-components=1 --directory=/etc/grid-security --wildcards */vomses */vomsdir && \
+    mv /etc/grid-security/vomses /etc
