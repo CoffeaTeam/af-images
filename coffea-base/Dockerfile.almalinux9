@@ -7,7 +7,8 @@ ENV PYTHON_VERSION=${python}
 
 RUN yum -y install epel-release \
      && yum -y update \
-     && yum -y install git bzip2 libgfortran which zsh emacs vim htop man man-pages \
+     && yum -y remove curl-minimal \
+     && yum -y --allowerasing install curl git bzip2 libgfortran which zsh emacs vim htop man man-pages \
      && curl -sSL https://github.com/conda-forge/miniforge/releases/download/23.3.1-1/Mambaforge-Linux-x86_64.sh -o /tmp/mambaforge.sh \
      && bash /tmp/mambaforge.sh -bfp /usr/local \
      && rm -rf /tmp/mambaforge.sh \
