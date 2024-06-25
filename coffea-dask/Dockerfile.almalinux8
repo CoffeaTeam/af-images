@@ -8,9 +8,10 @@ ENV PYTHON_VERSION=${python}
 RUN yum -y install epel-release \
      && yum -y update \
      && yum -y install git curl bzip2 libgfortran which zsh emacs vim htop man man-pages \
-     && curl -sSL https://github.com/conda-forge/miniforge/releases/download/23.3.1-1/Mambaforge-Linux-x86_64.sh -o /tmp/mambaforge.sh \
+     && curl -sSL https://github.com/conda-forge/miniforge/releases/download/latest/Mambaforge-Linux-x86_64.sh -o /tmp/mambaforge.sh \
      && bash /tmp/mambaforge.sh -bfp /usr/local \
      && rm -rf /tmp/mambaforge.sh \
+     && conda config --set solver classic \
      && mamba update mamba \
      && mamba clean --all --yes \
      && rpm -e --nodeps curl bzip2 \
