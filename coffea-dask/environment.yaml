@@ -44,7 +44,7 @@ dependencies:
   - vector
   - hist
     # ML
-  - xgboost
+  #- xgboost
   - pytorch
   - torch-scatter
   - pip
