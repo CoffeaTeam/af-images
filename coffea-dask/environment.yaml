@@ -9,7 +9,9 @@ dependencies:
   - voms # x509 proxy system
   - ca-policy-lcg # WLCG trusted CAs
   - xrootd
-  - htcondor
+  # we have issues with conflicting openssl version and htcondor 23.6.2 version is last one
+  # which we able to resolve in this environment.yaml
+  - htcondor==23.6.2
   - curl
     # jupyter-related
   - jupyterlab
