@@ -8,7 +8,7 @@ dependencies:
   - gxx
   - voms # x509 proxy system
   - ca-policy-lcg # WLCG trusted CAs
-  - xrootd
+  - xrootd==5.6.8
   # we have issues with conflicting openssl version and htcondor 10.8.0 version is last one
   # which we able to resolve in this environment.yaml
   - htcondor
