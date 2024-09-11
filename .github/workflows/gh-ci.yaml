@@ -25,7 +25,7 @@ jobs:
       matrix:
         image_dir: [coffea-base, coffea-dask]
         distro: [almalinux8, almalinux9]
-        python: ["3.9", "3.10", "3.11"]
+        python: ["3.9", "3.10", "3.11", "3.12"]
         exclude:
           - distro: almalinux8
             python: 3.9
