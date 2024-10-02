@@ -57,6 +57,7 @@ dependencies:
   - pytorch-sparse
   - pytorch-spline-conv
   - pip:
+    - "setuptools<71"
     - fastjet==3.4.0.1 # LAST VERSION workking with awkward1
     - tritonclient[all]
     - tflite-runtime==2.14.0
