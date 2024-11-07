@@ -13,7 +13,7 @@ jobs:
     - uses: butlerlogic/action-autotag@1.1.2
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-        strategy: regex
       with:
+        strategy: regex
         regex_pattern: '\s*\[?.*release\]?: "?.*(\d{4}\.\d{1,2}\.\d+).*"?'
         root: ".github/workflows/gh-ci.yaml"
