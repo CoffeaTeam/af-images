@@ -58,7 +58,7 @@ dependencies:
   - pytorch-sparse
   - pytorch-spline-conv
   - pip:
-    - coffea=0.7.23
+    - coffea==0.7.23
     - "setuptools<71"
     - fastjet==3.4.0.1 # LAST VERSION workking with awkward1
     - tritonclient[all]
