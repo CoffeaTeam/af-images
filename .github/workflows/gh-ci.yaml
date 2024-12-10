@@ -14,7 +14,7 @@ env:
   GITHUB_REF: ${{ github.ref }}
   # Update each time there is added latest python: it will be used for `latest` tag
   python_latest: "3.11"
-  release: "2024.9.0"
+  release: "2024.11.0"
   releasev0: "0.7.22"
 
 jobs:
