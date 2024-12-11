@@ -43,7 +43,6 @@ dependencies:
   - correctionlib
   - python-graphviz
     # scikit-hep
-  - awkward<2
   - vector
   - hist
     # ML
@@ -59,8 +58,9 @@ dependencies:
   - pytorch-spline-conv
   - pip:
     - coffea==0.7.23
+    - awkward==1.10.5
     - "setuptools<71"
-    - fastjet==3.4.0.1 # LAST VERSION workking with awkward1
+    - fastjet==3.4.0.1 # LAST VERSION working with awkward1
     - tritonclient[all]
     - tflite-runtime==2.14.0
     - onnxruntime
