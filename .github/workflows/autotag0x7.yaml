@@ -1,0 +1,19 @@
+name: Create Tag Coffea 0.7
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: butlerlogic/action-autotag@1.1.2
+      env:
+        GITHUB_TOKEN: "${{ secrets.BOT_TOKEN }}"
+      with:
+        strategy: regex
+        regex_pattern: '\s*\[?.*releasev0\]?: "?.*(\d{1}\.\d{1}\.\d+).*"?'
+        root: ".github/workflows/gh-ci.yaml"
