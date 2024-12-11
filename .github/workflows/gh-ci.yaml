@@ -180,7 +180,7 @@ jobs:
       if: ${{ matrix.image_dir != 'coffea-base' }}
       uses: docker/build-push-action@v5
       with:
-        platforms: linux/amd64
+        platforms: linux/amd64,linux/arm64/v8
         push: ${{  github.event_name == 'push' }}
         tags: ${{ steps.tags.outputs.tags }}
         context: ${{ matrix.image_dir }}
@@ -193,7 +193,7 @@ jobs:
       if: ${{ matrix.image_dir == 'coffea-base' }}
       uses: docker/build-push-action@v5
       with:
-        platforms: linux/amd64
+        platforms: linux/amd64,linux/arm64/v8
         push: ${{  github.event_name == 'push' }}
         tags: ${{ steps.tags.outputs.tags }}
         context: ${{ matrix.image_dir }}
@@ -201,4 +201,5 @@ jobs:
         build-args: |
           python=${{ matrix.python }}
           releasev0=${{ env.releasev0 }}
+
 
