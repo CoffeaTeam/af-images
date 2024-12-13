@@ -62,6 +62,6 @@ dependencies:
   - pip:
     - fastjet # to be added to conda-forge: https://github.com/scikit-hep/fastjet/issues/133
     - tritonclient[all]
-    #- tflite-runtime==2.14.0
+    - ai-edge-litert
     - onnxruntime
     - fsspec-xrootd
