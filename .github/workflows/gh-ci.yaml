@@ -13,7 +13,7 @@ env:
   GITHUB_SHA: ${{ github.sha }}
   GITHUB_REF: ${{ github.ref }}
   # Update each time there is added latest python: it will be used for `latest` tag
-  python_latest: "3.11"
+  python_latest: "3.12"
   python_latestv0: "3.10"
   # For coffea 2024.x.x we have conda release, github CI bot will detect new version and open PR with changes
   release: "2024.11.0"
