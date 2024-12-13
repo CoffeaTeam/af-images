@@ -11,7 +11,7 @@ dependencies:
   - xrootd
   # we have issues with conflicting openssl version and htcondor 10.8.0 version is last one
   # which we able to resolve in this environment.yaml
-  - htcondor
+  - htcondor=24.2.1 # pin HTCondor for LPC https://github.com/CoffeaTeam/lpcjobqueue/issues/38
   - curl
     # jupyter-related
   - jupyterlab
