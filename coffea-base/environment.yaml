@@ -9,7 +9,7 @@ dependencies:
   - voms # x509 proxy system
   - ca-policy-lcg # WLCG trusted CAs
   - xrootd
-  - htcondor=24.2.1 # pin HTCondor for LPC https://github.com/CoffeaTeam/lpcjobqueue/issues/38
+  - htcondor=24.1.1 # pin HTCondor for LPC https://github.com/CoffeaTeam/lpcjobqueue/issues/38
   - curl
     # jupyter-related
   - jupyterlab
