@@ -43,7 +43,7 @@ dependencies:
   - correctionlib
   - python-graphviz
     # scikit-hep
-  - vector
+  - vector<1.5
   - hist
     # ML
   - xgboost
