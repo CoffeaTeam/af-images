@@ -44,7 +44,8 @@ dependencies:
   - correctionlib
   - python-graphviz
     # scikit-hep
-  - awkward
+  # FIXME: # disable microarches for awkward-cpp
+  #- awkward
   - vector
   - hist
     # ML
@@ -65,3 +66,4 @@ dependencies:
     - ai-edge-litert-nightly # ai-edge-litert as replacement of tflite is still not available for python 
     - onnxruntime
     - fsspec-xrootd
+    - awkward # disable microarches for awkward-cpp
