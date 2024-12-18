@@ -19,11 +19,8 @@ RUN yum -y install epel-release \
 COPY environment.yaml /
 
 RUN mamba install --yes python=${PYTHON_VERSION} \
-     && mamba env update --file /environment.yaml \
+     && CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba env update --file /environment.yaml \
      && mamba clean -y --all
-
-# FIXME: # disable microarches for awkward-cpp
-RUN pip uninstall -y awkward awkward-cpp && pip install awkward
 
 # Make a symbolic link between installation /opt/conda/etc/grid-security and actual directory /etc/grid-security
 RUN ln -s /usr/local/etc/grid-security /etc/grid-security && \
