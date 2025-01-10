@@ -46,15 +46,21 @@ jobs:
     steps:
 
     - name: Check out code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
+      uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-docker-action@v4
       with:
-        driver: docker
+        daemon-config: |
+          {
+            "debug": true,
+            "features": {
+              "containerd-snapshotter": true
+            }
+          }
 
     - name: Login to DockerHub
       uses: docker/login-action@v1
@@ -118,7 +124,7 @@ jobs:
 
     - name: Build base v0
       if: ${{ matrix.image_dir == 'coffea-base' }}
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         load: true
         tags: ${{ steps.tags.outputs.tags }}
@@ -130,7 +136,7 @@ jobs:
 
     - name: Build base v1
       if: ${{ matrix.image_dir != 'coffea-base' }}
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         load: true
         tags: ${{ steps.tags.outputs.tags }}
@@ -178,9 +184,9 @@ jobs:
 
     - name: Build and push v0
       if: ${{ matrix.image_dir != 'coffea-base' }}
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
-        platforms: linux/amd64
+        platforms: linux/amd64,linux/arm64
         push: ${{  github.event_name == 'push' }}
         tags: ${{ steps.tags.outputs.tags }}
         context: ${{ matrix.image_dir }}
@@ -191,9 +197,9 @@ jobs:
 
     - name: Build and push v1
       if: ${{ matrix.image_dir == 'coffea-base' }}
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
-        platforms: linux/amd64
+        platforms: linux/amd64,linux/arm64
         push: ${{  github.event_name == 'push' }}
         tags: ${{ steps.tags.outputs.tags }}
         context: ${{ matrix.image_dir }}
