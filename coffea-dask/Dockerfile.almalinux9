@@ -2,6 +2,7 @@ FROM almalinux:9
 
 ARG python
 ARG release
+ARG TARGETPLATFORM
 
 ENV PYTHON_VERSION=${python}
 
@@ -16,11 +17,16 @@ RUN yum -y install epel-release \
      && mamba clean --all --yes \
      && yum clean all
 
-COPY environment.yaml /
+     COPY  environment.yaml environment-aarch64.yaml  /
 
-RUN mamba install --yes python=${PYTHON_VERSION} \
-     && CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba env update --file /environment.yaml \
-     && mamba clean -y --all
+# Some ML packages packages dont work on aarch64 
+RUN if [ "${TARGETPLATFORM}" == "linux/arm64" ]; then \
+     mamba install --yes python=${PYTHON_VERSION} \
+     && mamba env update --file /environment-aarch64.yaml \
+     && mamba clean -y --all ; \
+     else mamba install --yes python=${PYTHON_VERSION} \
+     && mamba env update --file /environment.yaml \
+     && mamba clean -y --all; fi
 
 # Make a symbolic link between installation /opt/conda/etc/grid-security and actual directory /etc/grid-security
 RUN ln -s /usr/local/etc/grid-security /etc/grid-security && \
