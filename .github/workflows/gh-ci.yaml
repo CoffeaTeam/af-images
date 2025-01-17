@@ -85,6 +85,9 @@ jobs:
         username: ${{ secrets.HARBOR_USER }}
         password: ${{ secrets.HARBOR_PASSWORD }}
 
+    - name: Workaround to free up 5GB of space # see https://github.com/actions/runner-images/issues/709#issuecomment-612569242
+      run: sudo rm -rf "/usr/local/share/boost" && sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
     - name: Generate tags
       id: tags
       env:
