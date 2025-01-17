@@ -10,7 +10,7 @@ Latest DockerHub Images: https://hub.docker.com/orgs/coffeateam/repositories
 
 * Dockerfiles and conda environment files are available in `coffea-dask` directory
 
-| Image           | Description                                   | Version | 
+| Image           | Description                                   | Last Tag Version | 
 |-----------------|-----------------------------------------------|-------------|
 | coffea-dask-alma8     | Alma8 Dask Coffea 2024 image with latest XrootD and CA certicates            |  ![Docker Image Version](https://img.shields.io/docker/v/coffeateam/coffea-dask-almalinux8) |
 | coffea-dask-alma9     | Alma9 Dask Coffea 2024 image with latest XrootD and CA certicates            | ![Docker Image Version](https://img.shields.io/docker/v/coffeateam/coffea-dask-almalinux9) |
@@ -22,7 +22,7 @@ Latest DockerHub Images: https://hub.docker.com/orgs/coffeateam/repositories
 * Dockerfiles and conda environment files are available in `coffea-base` directory
 
 
-| Image           | Description                                   | Version | 
+| Image           | Description                                   | Last Tag Version | 
 |-----------------|-----------------------------------------------|-------------|
 | coffea-base-alma8     | Alma8 Dask Coffea 0.7.x image with latest XrootD and CA certicates            | ![Docker Image Version](https://img.shields.io/docker/v/coffeateam/coffea-base-almalinux8) |
 | coffea-base-alma9     | Alma9 Dask Coffea 0.7.x image with latest XrootD and CA certicates            | ![Docker Image Version](https://img.shields.io/docker/v/coffeateam/coffea-base-almalinux9) |
