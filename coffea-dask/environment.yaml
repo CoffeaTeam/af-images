@@ -19,10 +19,8 @@ dependencies:
   - dask_labextension
   - dask-gateway
   - dask-jobqueue
-  # To be reverted: Dask needs to be pinned for now, do not use dask>=2024.12.0 with coffea, dask-awkward, or uproot
-  - dask=2024.11.2
-  # To be reverted with next coffea release: Dask needs to be pinned for now
-  - dask-awkward=2024.12.0
+  - dask
+  - dask-awkward
   - bokeh
   # Add workqueue
   - ndcctools
