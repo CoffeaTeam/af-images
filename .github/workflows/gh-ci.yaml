@@ -117,7 +117,7 @@ jobs:
             tags=${image}:latest,$tags
           fi
         else
-          if [ "base_branch" == "refs/heads/main" ]; then
+          if [ "$ref_branch" == "refs/heads/main" ]; then
             tag="${image}:head-py${python}"
             tags=$tag
             if [ "$python" == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
