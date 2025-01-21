@@ -20,7 +20,8 @@ COPY  environment.yaml environment-aarch64.yaml  /
 
 # Some ML packages packages dont work on aarch64 
 RUN if [ "${TARGETPLATFORM}" == "linux/arm64" ]; then \
-     mamba install --yes python=${PYTHON_VERSION} \
+     export G_SLICE=always-malloc \
+     && mamba install --yes python=${PYTHON_VERSION} \
      && mamba env update --file /environment-aarch64.yaml \
      && mamba clean -y --all ; \
      else mamba install --yes python=${PYTHON_VERSION} \
