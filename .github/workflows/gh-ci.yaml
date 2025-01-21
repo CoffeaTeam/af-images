@@ -99,7 +99,7 @@ jobs:
         release: ${{ env.release }}
         python_latest: ${{ env.python_latest}}
         stable: ${{ startsWith(github.ref, 'refs/tags') }}
-        base_branch: ${{ github.base_ref }}
+        ref_branch: ${{ github.ref }}
       run: |
         image="coffeateam/${image_dir}-${distro}"
         image_default="coffeateam/${image_dir}"
@@ -117,14 +117,14 @@ jobs:
             tags=${image}:latest,$tags
           fi
         else
-          if [ "base_branch" == "dev" ]; then
-            tag="${image}:dev-py${python}"
+          if [ "base_branch" == "refs/heads/main" ]; then
+            tag="${image}:head-py${python}"
             tags=$tag
             if [ "$python" == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
-              tags=${image}:dev,$tags
+              tags=${image}:head,$tags
             fi
           else
-            tag="${image}:head-py${python}"
+            tag="${image}:dev-py${python}"
             tags=$tag
             if [ "$python" == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
               tags=${image}:dev,$tags
