@@ -24,7 +24,7 @@ RUN if [ "${TARGETPLATFORM}" == "linux/arm64" ]; then \
      mamba install --yes python=${PYTHON_VERSION} \
      && mamba env update --file /environment-aarch64.yaml \
      && mamba clean -y --all ; \
-     else mamba install --yes python=${PYTHON_VERSION} \
+     else CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba install --yes python=${PYTHON_VERSION} \
      && mamba env update --file /environment.yaml \
      && mamba clean -y --all; fi
 
