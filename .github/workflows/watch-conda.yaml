@@ -3,7 +3,7 @@ name: Check for new versions of Coffea on Conda Forge
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "0 0 * * *"
 
 
 jobs:
