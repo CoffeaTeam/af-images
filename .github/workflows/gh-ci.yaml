@@ -19,7 +19,7 @@ env:
   # For coffea 2024.x.x we have conda release, github CI bot will detect new version and open PR with changes
   release: "2025.1.1"
   # For coffea 0.7.23 we dont have conda release, please update it manually
-  releasev0: "0.7.24"
+  releasev0: "0.7.25"
 
 jobs:
 
@@ -28,7 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         image_dir: [coffea-base, coffea-dask]
-        distro: [almalinux8, almalinux9]
+        distro: [almalinux8, almalinux9, almalinux9-noml]
         python: ["3.9", "3.10", "3.11", "3.12"]
         exclude:
           - distro: almalinux8

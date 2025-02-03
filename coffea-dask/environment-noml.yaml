@@ -1,0 +1,56 @@
+name: base
+channels:
+  - conda-forge
+  - pyg
+  - pytorch
+dependencies:
+  # python version specified in Dockerfile
+  - gxx
+  - voms # x509 proxy system
+  - ca-policy-lcg # WLCG trusted CAs
+  - xrootd
+  # we have issues with conflicting openssl version and htcondor 10.8.0 version is last one
+  # which we able to resolve in this environment.yaml
+  - htcondor=24.1.1 # pin HTCondor for LPC https://github.com/CoffeaTeam/lpcjobqueue/issues/38
+  - curl
+    # jupyter-related
+  - jupyterlab
+  - ipympl
+  - dask_labextension
+  - dask-gateway
+  - dask-jobqueue
+  - dask
+  - dask-awkward
+  - bokeh
+  # Add workqueue
+  - ndcctools
+    # core scipy
+    #- nomkl # no Intel math kernel library, reduces image size
+  - numpy
+  - scipy
+  - pandas
+    # compression
+  - lz4
+  - python-xxhash
+  - zstandard
+    # file formats
+  - h5py
+  - uproot
+    # misc.
+  - pytables
+  - python-rapidjson
+  - geventhttpclient
+  - brotli
+  - correctionlib
+  - python-graphviz
+    # scikit-hep
+  # FIXME: # disable microarches for awkward-cpp
+  - awkward
+  - vector
+  - hist
+  - pip
+  - coffea=2025.1.1
+  - rucio-clients
+  - pip:
+    - fastjet # to be added to conda-forge: https://github.com/scikit-hep/fastjet/issues/133
+    - fsspec-xrootd
