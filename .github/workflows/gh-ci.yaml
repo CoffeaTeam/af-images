@@ -32,6 +32,8 @@ jobs:
         python: ["3.10", "3.11", "3.12"]
         exclude:
           - image_dir: coffea-base
+            distro: almalinux9-noml
+          - image_dir: coffea-base
             python: 3.11
           - image_dir: coffea-base
             python: 3.12
