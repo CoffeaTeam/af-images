@@ -17,12 +17,12 @@ RUN yum -y install epel-release \
      && mamba clean --all --yes \
      && yum clean all
 
-     COPY  environment.yaml environment-aarch64.yaml  /
+     COPY  environment-noml.yaml  /
 
 # Some ML packages packages dont work on aarch64
 RUN mamba install --yes python=${PYTHON_VERSION} \
      && CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba env update --file /environment-noml.yaml \
-     && mamba clean -y --all; fi
+     && mamba clean -y --all
 
 # Make a symbolic link between installation /opt/conda/etc/grid-security and actual directory /etc/grid-security
 RUN ln -s /usr/local/etc/grid-security /etc/grid-security && \
