@@ -17,7 +17,7 @@ env:
   python_latest: "3.12"
   python_latestv0: "3.10"
   # For coffea 2024.x.x we have conda release, github CI bot will detect new version and open PR with changes
-  release: "2025.1.1"
+  release: "2025.3.0"
   # For coffea 0.7.23 we dont have conda release, please update it manually, as well in coffea-base/environment.yaml
   releasev0: "0.7.26"
 
