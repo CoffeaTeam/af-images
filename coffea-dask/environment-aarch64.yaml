@@ -53,7 +53,7 @@ dependencies:
   - pytorch
   ##- torch-scatter  # no aarch64 support
   - pip
-  - coffea=2025.1.1
+  - coffea=2025.3.0
   - rucio-clients
     # pyg
   ##- pyg # no aarch64 support

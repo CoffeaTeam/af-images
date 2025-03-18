@@ -53,7 +53,7 @@ dependencies:
   - pytorch
   - torch-scatter
   - pip
-  - coffea=2025.1.1
+  - coffea=2025.3.0
   - rucio-clients
     # pyg
   - pyg
