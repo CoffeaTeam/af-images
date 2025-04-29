@@ -17,7 +17,7 @@ dependencies:
   - dask_labextension
   - dask-gateway
   - dask-jobqueue
-  - dask
+  - dask<2025.3.0
   - dask-awkward
   - bokeh
   # Add workqueue
