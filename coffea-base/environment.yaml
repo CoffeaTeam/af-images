@@ -19,7 +19,7 @@ dependencies:
   - dask-jobqueue
   - dask-expr
    # To be reverted: Dask needs to be pinned for now, do not use dask>=2024.12.0 with coffea, dask-awkward, or uproot
-  - dask<2025.3.0
+  - dask<2025.4.0
   - bokeh
   # Add workqueue
   - ndcctools
