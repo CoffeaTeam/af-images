@@ -28,4 +28,5 @@ RUN mamba install --yes python=${PYTHON_VERSION} \
 RUN ln -s /usr/local/etc/grid-security /etc/grid-security && \
     curl -L https://github.com/opensciencegrid/osg-vo-config/archive/refs/heads/master.tar.gz | \
     tar -xz --strip-components=1 --directory=/etc/grid-security --wildcards */vomses */vomsdir && \
-    mv /etc/grid-security/vomses /etc
+    cp /etc/grid-security/vomses /etc && \
+    mv /etc/grid-security/vomses /usr/local/etc/
