@@ -1,8 +1,3 @@
-try:
-    import hist.dask as hda
-except ImportError:
-    import hist as hda
-
 import dask
 import awkward as ak
 
@@ -16,8 +11,9 @@ import pytest
 fileset = "https://github.com/CoffeaTeam/coffea/raw/master/tests/samples/nano_dimuon.root"
 
 class MyProcessor(processor.ProcessorABC):
-    def __init__(self):
-        pass
+    def __init__(self, mode):
+        assert mode in ["eager", "virtual", "dask"]
+        self._mode = mode
 
     def process(self, events):
         dataset = events.metadata['dataset']
@@ -33,8 +29,13 @@ class MyProcessor(processor.ProcessorABC):
             behavior=candidate.behavior,
         )
 
+        if self._mode == "dask":
+            from hist.dask import Hist as hist_class
+        else:
+            from hist import Hist as hist_class
+
         h_mass = (
-            hda.Hist.new
+            hist_class.new
             .StrCat(["opposite", "same"], name="sign")
             .Log(1000, 0.2, 200., name="mass", label="$m_{\mu\mu}$ [GeV]")
             .Int64()
@@ -61,27 +62,37 @@ class MyProcessor(processor.ProcessorABC):
 
 @pytest.mark.v0
 def test_processor_dimu_massv0():
-    client = Client()
-    executor = processor.DaskExecutor(client=client)
-    run = processor.Runner(executor=executor,
-                           schema=BaseSchema)
-    out = run({"dimuon": [fileset]},
-              treename="Events",
-              processor_instance=MyProcessor())
-    print(out)
-    assert out["dimuon"]["entries"] == 40
+    with Client() as client:
+        executor = processor.DaskExecutor(client=client)
+        run = processor.Runner(executor=executor,
+                            schema=BaseSchema)
+        out = run({"dimuon": [fileset]},
+                treename="Events",
+                processor_instance=MyProcessor("virtual"))
+        print(out)
+        assert out["dimuon"]["entries"] == 40
 
 @pytest.mark.calver
 def test_dimu_masscalver():
-    with Client():
+    with Client() as client:
+        executor = processor.DaskExecutor(client=client)
+        run = processor.Runner(executor=executor,
+                            schema=BaseSchema)
+        out = run({"DoubleMuon": {"files": {fileset: "Events"}}},
+                    processor_instance=MyProcessor("virtual"))
+        print(out)
+        assert out["DoubleMuon"]["entries"] == 40
+
         events = NanoEventsFactory.from_root(
             {fileset: "Events"},
             metadata={"dataset": "DoubleMuon"},
-            schemaclass=BaseSchema
+            schemaclass=BaseSchema,
+            mode="dask",
             ).events()
-        p = MyProcessor()
+        p = MyProcessor("dask")
         out = p.process(events)
         (computed,) = dask.compute(out)
+        print(computed)
         assert computed["DoubleMuon"]["entries"] == 40
     #from coffea.dataset_tools import (
     #    apply_to_fileset,
