@@ -53,14 +53,16 @@ dependencies:
   - pytorch
   ##- torch-scatter  # no aarch64 support
   - pip
-  - coffea=2025.3.0
-  - rucio-clients
     # pyg
   ##- pyg # no aarch64 support
   ##- pytorch-cluster # no aarch64 support
   ##- pytorch-sparse # no aarch64 support
   ##- pytorch-spline-conv # no aarch64 support
+  #- coffea=2025.3.0
+  #- coffea=2025.3.0
+  - rucio-clients
   - pip:
+    - coffea==2025.5.0.rc1
     - fastjet # to be added to conda-forge: https://github.com/scikit-hep/fastjet/issues/133
     - tritonclient[all]
     - ai-edge-litert-nightly # ai-edge-litert as replacement of tflite is still not available for python
