@@ -50,6 +50,6 @@ dependencies:
   #- coffea=2025.3.0
   - rucio-clients
   - pip:
-    - coffea==2025.5.0.rc2
+    - coffea==2025.5.0.rc1
     - fastjet # to be added to conda-forge: https://github.com/scikit-hep/fastjet/issues/133
     - fsspec-xrootd
