@@ -5,7 +5,6 @@
 
 Latest DockerHub Images: https://hub.docker.com/orgs/coffeateam/repositories
 
-
 # Coffea image tags
 
 
