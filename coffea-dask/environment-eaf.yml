@@ -17,7 +17,7 @@ dependencies:
   - jupyterlab
   - ipympl
   - dask_labextension
-  - dask-gateway==2025.4.1
+  - dask-gateway==2025.4.0
   - dask-jobqueue
   - dask==2025.3.0
   - dask-awkward
