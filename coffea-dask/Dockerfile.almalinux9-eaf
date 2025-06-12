@@ -17,7 +17,7 @@ RUN yum -y install epel-release \
      && mamba clean --all --yes \
      && yum clean all
 
-     COPY  environment-eaf.yaml environment-aarch64.yaml  /
+     COPY  environment-eaf.yaml environment.yaml  /
 
 # Some ML packages packages dont work on aarch64
 RUN if [ "${TARGETPLATFORM}" == "linux/arm64" ]; then \
