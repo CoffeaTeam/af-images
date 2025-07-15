@@ -86,6 +86,7 @@ def test_dimu_masscalver():
     from coffea.dataset_tools import apply_to_fileset, preprocess
     if coffea.__version__ > "2025.3.0":
         with Client() as client:
+            from coffea.dataset_tools import apply_to_fileset, preprocess
             executor = processor.DaskExecutor(client=client)
             run = processor.Runner(
                 executor=executor,
