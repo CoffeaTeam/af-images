@@ -86,33 +86,12 @@ def test_dimu_masscalver():
     from coffea.dataset_tools import apply_to_fileset, preprocess
 
     with Client() as client:
-        executor = processor.DaskExecutor(client=client)
-        run = processor.Runner(
-            executor=executor,
-            schema=BaseSchema,
-            chunksize=20,
-        )
-        out = run(
-            {"DoubleMuon": {"files": {fileset: "Events"}}},
-            processor_instance=MyProcessor("virtual"),
-        )
-        print(out)
-        assert out["DoubleMuon"]["entries"] == 40
-
-        dataset_runnable, dataet_updated = preprocess(
-            {"DoubleMuon": {"files": {fileset: "Events"}}},
-            step_size=20,
-            align_clusters=False,
-            files_per_batch=1,
-            skip_bad_files=True,
-            save_form=False,
-            scheduler=client,
-        )
-        to_compute = apply_to_fileset(
-            MyProcessor("dask"),
-            dataset_runnable,
-            schemaclass=BaseSchema,
-        )
-        (out,) = dask.compute(to_compute)
-        print(out)
-        assert out["DoubleMuon"]["DoubleMuon"]["entries"] == 40
+        events = NanoEventsFactory.from_root(
+            {fileset: "Events"},
+            metadata={"dataset": "DoubleMuon"},
+            schemaclass=BaseSchema
+            ).events()
+        p = MyProcessor()
+        out = p.process(events)
+        (computed,) = dask.compute(out)
+        assert computed["DoubleMuon"]["entries"] == 40
