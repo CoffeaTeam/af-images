@@ -50,6 +50,6 @@ dependencies:
   #- coffea=2025.3.0
   - rucio-clients
   - fastjet
+  - coffea==2025.7.0
   - pip:
-    - coffea==2025.7.0
     - fsspec-xrootd

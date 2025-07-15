@@ -48,6 +48,7 @@ dependencies:
   - awkward
   - vector
   - hist
+  - fastjet
     # ML
   #- xgboost
   - pytorch
@@ -60,9 +61,8 @@ dependencies:
   - pytorch-spline-conv
   #- coffea=2025.3.0
   - rucio-clients
+  - coffea==2025.7.0
   - pip:
-    - coffea==2025.3.0
-    - fastjet # to be added to conda-forge: https://github.com/scikit-hep/fastjet/issues/133
     - tritonclient[all]
     - ai-edge-litert-nightly # ai-edge-litert as replacement of tflite is still not available for python
     - onnxruntime

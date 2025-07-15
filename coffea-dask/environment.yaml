@@ -61,8 +61,8 @@ dependencies:
   #- coffea=2025.3.0
   - rucio-clients
   - fastjet
+  - coffea==2025.7.0
   - pip:
-    - coffea==2025.7.0
     - tritonclient[all]
     - ai-edge-litert-nightly # ai-edge-litert as replacement of tflite is still not available for python
     - onnxruntime
