@@ -127,3 +127,4 @@ def test_dimu_masscalver():
             out = p.process(events)
             (computed,) = dask.compute(out)
             assert computed["DoubleMuon"]["entries"] == 40
+
