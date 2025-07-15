@@ -123,7 +123,7 @@ def test_dimu_masscalver():
                 metadata={"dataset": "DoubleMuon"},
                 schemaclass=BaseSchema
                 ).events()
-            p = MyProcessor()
+            p = MyProcessor("dask")
             out = p.process(events)
             (computed,) = dask.compute(out)
             assert computed["DoubleMuon"]["entries"] == 40
