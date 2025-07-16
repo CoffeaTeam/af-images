@@ -47,9 +47,9 @@ dependencies:
   - vector
   - hist
   - pip
-  #- coffea=2025.3.0
+  #- coffea=2025.7.0
   - rucio-clients
   - fastjet
-  - coffea==2025.7.0
+  - coffea=2025.7.0
   - pip:
     - fsspec-xrootd
