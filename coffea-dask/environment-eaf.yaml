@@ -50,7 +50,7 @@ dependencies:
   - hist
   - fastjet
     # ML
-  #- xgboost
+  - xgboost
   - pytorch
   - torch-scatter
   - pip
@@ -59,11 +59,8 @@ dependencies:
   - pytorch-cluster
   - pytorch-sparse
   - pytorch-spline-conv
-  #- coffea=2025.7.3
   - rucio-clients
   - coffea=2025.7.3
-  - pip:
-    - tritonclient[all]
-    - ai-edge-litert-nightly # ai-edge-litert as replacement of tflite is still not available for python
-    - onnxruntime
-    - fsspec-xrootd
+  - tritonclient
+  - onnxruntime
+  - fsspec-xrootd
