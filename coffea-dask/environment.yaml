@@ -59,6 +59,7 @@ dependencies:
   - rucio-clients
   - fastjet
   - coffea=2025.7.3
-  - tritonclient
   - onnxruntime
   - fsspec-xrootd
+  - pip:
+    - tritonclient  #  more recent versions
