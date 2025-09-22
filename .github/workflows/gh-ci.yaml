@@ -29,7 +29,7 @@ jobs:
       matrix:
         image_dir: [coffea-base, coffea-dask]
         distro: [almalinux8, almalinux9, almalinux9-noml, almalinux9-eaf]
-        python: ["3.10", "3.11", "3.12"]
+        python: ["3.10", "3.11", "3.12", "3.13"]
         exclude:
           - image_dir: coffea-base
             distro: almalinux9-noml
@@ -39,6 +39,8 @@ jobs:
             python: 3.11
           - image_dir: coffea-base
             python: 3.12
+          - image_dir: coffea-base
+            python: 3.13
     name: ${{ matrix.image_dir }}-${{ matrix.distro }}-${{ matrix.python }}
     runs-on: ubuntu-latest
     permissions:
