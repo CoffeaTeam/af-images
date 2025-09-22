@@ -58,10 +58,10 @@ dependencies:
   - pytorch-cluster
   - pytorch-sparse
   - pytorch-spline-conv
-  #- coffea=2025.7.3
+  #- coffea=2025.9.0
   - rucio-clients
   - fastjet
-  - coffea=2025.7.3
+  - coffea=2025.9.0
   - pip:
     - tritonclient[all]
     - ai-edge-litert-nightly # ai-edge-litert as replacement of tflite is still not available for python
