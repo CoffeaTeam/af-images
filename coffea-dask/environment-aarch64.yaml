@@ -58,13 +58,10 @@ dependencies:
   ##- pytorch-cluster # no aarch64 support
   ##- pytorch-sparse # no aarch64 support
   ##- pytorch-spline-conv # no aarch64 support
-  #- coffea=2025.7.3
-  #- coffea=2025.7.3
   - rucio-clients
   - fastjet
   - coffea=2025.7.3
-  - pip:
-    - tritonclient[all]
-    - ai-edge-litert-nightly # ai-edge-litert as replacement of tflite is still not available for python
-    - onnxruntime
-    - fsspec-xrootd
+  - tritonclient[all]
+  - onnxruntime
+  - fsspec-xrootd
+

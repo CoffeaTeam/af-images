@@ -9,8 +9,6 @@ dependencies:
   - voms # x509 proxy system
   - ca-policy-lcg # WLCG trusted CAs
   - xrootd
-  # we have issues with conflicting openssl version and htcondor 10.8.0 version is last one
-  # which we able to resolve in this environment.yaml
   - htcondor=24.1.1 # pin HTCondor for LPC https://github.com/CoffeaTeam/lpcjobqueue/issues/38
   - curl
     # jupyter-related
@@ -49,7 +47,7 @@ dependencies:
   - vector
   - hist
     # ML
-  #- xgboost
+  - xgboost
   - pytorch
   - torch-scatter
   - pip
@@ -58,12 +56,9 @@ dependencies:
   - pytorch-cluster
   - pytorch-sparse
   - pytorch-spline-conv
-  #- coffea=2025.7.3
   - rucio-clients
   - fastjet
   - coffea=2025.7.3
-  - pip:
-    - tritonclient[all]
-    - ai-edge-litert-nightly # ai-edge-litert as replacement of tflite is still not available for python
-    - onnxruntime
-    - fsspec-xrootd
+  - tritonclient
+  - onnxruntime
+  - fsspec-xrootd
