@@ -7,6 +7,7 @@ from coffea.nanoevents import BaseSchema, NanoEventsFactory, NanoAODSchema
 
 from dask.distributed import Client
 import pytest
+from packaging.version import parse as parse_version
 
 fileset = (
     "https://github.com/CoffeaTeam/coffea/raw/master/tests/samples/nano_dimuon.root"
@@ -84,7 +85,7 @@ def test_processor_dimu_massv0():
 @pytest.mark.calver
 def test_dimu_masscalver():
     from coffea.dataset_tools import apply_to_fileset, preprocess
-    if coffea.__version__ > "2025.3.0":
+    if parse_version(coffea.__version__) > parse_version("2025.3.0"):
         with Client() as client:
             executor = processor.DaskExecutor(client=client)
             run = processor.Runner(
