@@ -60,7 +60,7 @@ dependencies:
   ##- pytorch-spline-conv # no aarch64 support
   - rucio-clients
   - fastjet
-  - coffea=2025.10.0
+  - coffea=2025.10.1
   - tritonclient[all]
   - onnxruntime
   - fsspec-xrootd
