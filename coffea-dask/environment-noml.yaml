@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
   # python version specified in Dockerfile
-  - gxx
+  #- gxx
   - voms # x509 proxy system
   - ca-policy-lcg # WLCG trusted CAs
   - xrootd
@@ -47,5 +47,5 @@ dependencies:
   - pip
   - rucio-clients
   - fastjet
-  - coffea=2025.10.0
+  - coffea=2025.10.1
   - fsspec-xrootd

@@ -6,28 +6,27 @@ ARG TARGETPLATFORM
 
 ENV PYTHON_VERSION=${python}
 
-RUN yum -y install epel-release \
-     && yum -y update \
-     && yum -y install curl git bzip2 libgfortran which zsh emacs vim htop man man-pages \
-     && curl -fsSLo Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" \
-     && bash Miniforge3.sh -bfp /usr/local \
-     && rm -rf Miniforge3.sh \
-     && mamba update mamba \
-     && mamba clean --all --yes \
-     && rpm -e --nodeps curl bzip2 \
-     && yum clean all
+# Install dependencies for Miniforge
+RUN dnf install -y epel-release && \
+    dnf update -y && \
+    dnf install -y wget bzip2 ca-certificates git wget libgfortran which zsh emacs vim htop man man-pages && \
+    dnf clean all
 
-COPY  environment.yaml environment-aarch64.yaml  /
+# Download and install Miniforge
+RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" -O /tmp/miniforge.sh && \
+    bash /tmp/miniforge.sh -bfp /usr/local && \
+    rm /tmp/miniforge.sh && \
+    bash /usr/local/etc/profile.d/conda.sh && \
+    bash /usr/local/etc/profile.d/mamba.sh && \
+    conda init  && \
+    mamba clean -y --all
+
+COPY  environment.yaml  /
 
 # Some ML packages packages dont work on aarch64 
-RUN if [ "${TARGETPLATFORM}" == "linux/arm64" ]; then \
-     export G_SLICE=always-malloc \
-     && mamba install --yes python=${PYTHON_VERSION} \
-     && mamba env update --file /environment-aarch64.yaml \
-     && mamba clean -y --all ; \
-     else mamba install --yes python=${PYTHON_VERSION} \
+RUN mamba install --yes python=${PYTHON_VERSION} \
      && mamba env update --file /environment.yaml \
-     && mamba clean -y --all; fi
+     && mamba clean -y --all
 
 # Make a symbolic link between installation /opt/conda/etc/grid-security and actual directory /etc/grid-security
 RUN ln -s /usr/local/etc/grid-security /etc/grid-security && \

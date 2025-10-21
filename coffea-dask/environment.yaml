@@ -5,7 +5,7 @@ channels:
   - pytorch
 dependencies:
   # python version specified in Dockerfile
-  - gxx
+  #- gxx
   - voms # x509 proxy system
   - ca-policy-lcg # WLCG trusted CAs
   - xrootd
