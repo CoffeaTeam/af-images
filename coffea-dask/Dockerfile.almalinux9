@@ -18,7 +18,8 @@ RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Mini
     rm /tmp/miniforge.sh && \
     bash /usr/local/etc/profile.d/conda.sh && \
     bash /usr/local/etc/profile.d/mamba.sh && \
-    conda init
+    conda init && \
+    mamba clean -y --all
 
 COPY environment.yaml  /
 
