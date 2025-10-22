@@ -58,7 +58,7 @@ dependencies:
   - pytorch-spline-conv
   - rucio-clients
   - fastjet
-  - coffea=2025.10.0
+  - coffea=2025.10.1
   - onnxruntime
   - fsspec-xrootd
   - pip:
