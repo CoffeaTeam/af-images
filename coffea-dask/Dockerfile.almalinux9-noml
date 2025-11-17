@@ -18,15 +18,13 @@ RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Mini
     rm /tmp/miniforge.sh && \
     bash /usr/local/etc/profile.d/conda.sh && \
     bash /usr/local/etc/profile.d/mamba.sh && \
-    conda init && \
-    mamba clean -y --all
+    conda init
 
 COPY  environment-noml.yaml  /
 
-# Some ML packages packages dont work on aarch64
-RUN mamba install --yes python=${PYTHON_VERSION} \
-     && CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba env update --file /environment-noml.yaml \
-     && mamba clean -y --all
+RUN mamba install -y \
+    python=${PYTHON_VERSION} -f /environment-noml.yaml \
+    && mamba clean -tipy
 
 # Make a symbolic link between installation /opt/conda/etc/grid-security and actual directory /etc/grid-security
 RUN ln -s /usr/local/etc/grid-security /etc/grid-security && \
