@@ -33,7 +33,7 @@ dependencies:
   - zstandard
     # file formats
   - h5py
-  - uproot>=5.6.2
+  - uproot
     # misc.
   - pytables
   - python-rapidjson
@@ -61,5 +61,5 @@ dependencies:
   - coffea=2025.10.2
   - onnxruntime
   - fsspec-xrootd
-  - pip:
-    - tritonclient  #  more recent versions
+  #- pip:
+  #  - tritonclient  #  more recent versions

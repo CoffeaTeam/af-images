@@ -8,9 +8,7 @@ Latest DockerHub Images: https://hub.docker.com/orgs/coffeateam/repositories
 # Coffea image tags
 
 
-* `dev-` tags represent the status of `dev` branch
-
-* `head-` tags represent the status of `main` branch
+* `dev-` tags represent the status of `main` branch
 
 * `202x.x.x-` and `0.7.x.-`, as well `latest`  represent relevant tags in [this repository](https://github.com/CoffeaTeam/af-images/tags)
 
