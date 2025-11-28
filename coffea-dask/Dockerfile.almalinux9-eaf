@@ -22,8 +22,7 @@ RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Mini
 
 COPY environment-eaf.yaml  /
 
-RUN export G_SLICE=always-malloc \
-    && mamba install -y python=${PYTHON_VERSION} \
+RUN mamba install -y python=${PYTHON_VERSION} \
     && CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba env update --file /environment-eaf.yaml \
     && mamba clean -tipy \
     && find /usr/local -type f -name '*.a' -delete \
