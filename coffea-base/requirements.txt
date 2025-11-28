@@ -1,0 +1,7 @@
+coffea==0.7.30
+awkward==1.10.5
+"setuptools<71"
+fastjet==3.4.0.1 # LAST VERSION working with awkward1
+tritonclient[all]
+tflite-runtime==2.14.0
+onnxruntime
