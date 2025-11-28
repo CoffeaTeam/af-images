@@ -25,7 +25,7 @@ dependencies:
   - ndcctools
     # core scipy
     #- nomkl # no Intel math kernel library, reduces image size
-  - numpy
+  - numpy<2
   - scipy
   - pandas
     # compression
