@@ -11,7 +11,7 @@ dependencies:
   - xrootd
   # we have issues with conflicting openssl version and htcondor 10.8.0 version is last one
   # which we able to resolve in this environment.yaml
-  - htcondor<23.1 # note for changing pin: HTCondor for LPC https://github.com/CoffeaTeam/lpcjobqueue/issues/38
+  - htcondor=24.1.1 # pin HTCondor for LPC https://github.com/CoffeaTeam/lpcjobqueue/issues/38
   - curl
     # jupyter-related
   - jupyterlab
@@ -19,7 +19,7 @@ dependencies:
   - dask_labextension
   - dask-gateway==2025.4.0
   - dask-jobqueue
-  - dask==2025.3.0
+  - dask<2025.4.0
   - dask-awkward
   - bokeh
   # Add workqueue
@@ -63,5 +63,4 @@ dependencies:
   - coffea=2025.10.2
   - onnxruntime
   - fsspec-xrootd
-  - pip:
-    - tritonclient  #  more recent versions
+  - tritonclient
