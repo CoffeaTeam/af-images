@@ -104,7 +104,7 @@ jobs:
     - name: Workaround to free up 5GB of space # see https://github.com/actions/runner-images/issues/709#issuecomment-612569242
       run: sudo rm -rf "/usr/local/share/boost" && sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
-    - name: Generate tags
+    - name: Generate Docker and OSG tags 
       id: tags
       env:
         image_dir: ${{ matrix.image_dir }}
@@ -234,4 +234,16 @@ jobs:
         build-args: |
           python=${{ matrix.python }}
           releasev0=${{ env.releasev0 }}
+
+    - name: Push to Harbor Hub
+      if: ${{ github.event_name == 'push' }}
+      env:
+        TAGS: ${{ steps.tags.outputs.tags }}
+      run: |
+        for tag in $(echo $TAGS | tr ',' ' '); do
+          harbor_tag="hub.opensciencegrid.org/${tag}"
+            echo "Tagging $tag -> $harbor_tag"
+            docker tag $tag $harbor_tag
+            docker push $harbor_tag
+          done
 
