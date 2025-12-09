@@ -12,21 +12,23 @@ RUN dnf install -y epel-release && \
     dnf install -y wget bzip2 ca-certificates git wget libgfortran which zsh emacs vim htop man man-pages && \
     dnf clean all
 
-# Download and install Miniforge
 RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" -O /tmp/miniforge.sh && \
     bash /tmp/miniforge.sh -bfp /usr/local && \
     rm /tmp/miniforge.sh && \
-    bash /usr/local/etc/profile.d/conda.sh && \
-    bash /usr/local/etc/profile.d/mamba.sh && \
-    conda init && \
-    mamba clean -y --all
+    conda clean --tarballs --index-cache --packages --yes && \
+    conda clean --force-pkgs-dirs --all --yes  && \
+    echo ". /usr/local/etc/profile.d/conda.sh && conda activate base" >> /etc/skel/.bashrc && \
+    echo ". /usr/local/etc/profile.d/conda.sh && conda activate base" >> ~/.bashrc
 
-COPY  environment-eaf.yaml  /
+COPY environment-eaf.yaml  /
 
-# Some ML packages packages dont work on aarch64
-RUN mamba install --yes python=${PYTHON_VERSION} \
-     && CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba env update --file /environment-eaf.yaml \
-     && mamba clean -y --all
+RUN mamba install -y python=${PYTHON_VERSION} \
+    && CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba env update --file /environment-eaf.yaml \
+    && mamba clean -tipy \
+    && find /usr/local -type f -name '*.a' -delete \
+    && find /usr/local -type f -name '*.pyc' -delete \
+    && find /usr/local -type f -name '*.js.map' -delete \
+    && rm -rf /usr/local/pkgs
 
 # Make a symbolic link between installation /opt/conda/etc/grid-security and actual directory /etc/grid-security
 RUN ln -s /usr/local/etc/grid-security /etc/grid-security && \

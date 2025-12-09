@@ -61,5 +61,4 @@ dependencies:
   - coffea=2025.11.0
   - onnxruntime
   - fsspec-xrootd
-  - pip:
-    - tritonclient  #  more recent versions
+  - tritonclient
