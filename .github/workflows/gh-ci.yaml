@@ -150,12 +150,57 @@ jobs:
         echo "::set-output name=tag::${tag}"
         echo "::set-output name=tags::${tags}"
 
+    - name: Generate OSG tags  (we are going to remove it as soon as we have coffeateam space)
+      id: osgtags
+      env:
+        image_dir: ${{ matrix.image_dir }}
+        python: ${{ matrix.python }}
+        distro: ${{ matrix.distro }}
+        releasev0: ${{ env.releasev0 }}
+        release: ${{ env.release }}
+        python_latest: ${{ env.python_latest}}
+        stable: ${{ startsWith(github.ref, 'refs/tags') }}
+        ref_branch: ${{ github.ref }}
+      run: |
+        image="coffea-casa/${image_dir}-${distro}"
+        image_default="coffea-casa/${image_dir}"
+        # release osgtag or in case other case make it dev
+        if [ "$stable" == "true" ]; then
+          if [ ${image_dir} == 'coffea-base' ]; then
+            osgtag="${image}:${releasev0}-py${python}"
+          else
+            osgtag="${image}:${release}-py${python}"
+          fi
+          osgtags=${image}:latest-py${python},$tag
+          # latest tag
+          if [ ${python} == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
+            osgtags=${image}:latest,$osgtags
+          fi
+        else
+          if [ "$ref_branch" == "refs/heads/main" ]; then
+            osgtag="${image}:head-py${python}"
+            osgtags=$osgtag
+            if [ "$python" == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
+              osgtags=${image}:head,$osgtags
+            fi
+          else
+            osgtag="${image}:dev-py${python}"
+            osgtags=$osgtag
+            if [ "$python" == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
+              osgtags=${image}:dev,$osgtags
+            fi
+          fi
+        fi
+
+        echo "::set-output name=osgtag::${osgtags}"
+        echo "::set-output name=osgtags::${osgtags}"
+
     - name: Build base v0
       if: ${{ matrix.image_dir == 'coffea-base' }}
       uses: docker/build-push-action@v6
       with:
         load: true
-        tags: ${{ steps.tags.outputs.tags }}
+        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
@@ -167,7 +212,7 @@ jobs:
       uses: docker/build-push-action@v6
       with:
         load: true
-        tags: ${{ steps.tags.outputs.tags }}
+        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
@@ -176,13 +221,13 @@ jobs:
 
     - name: Test Conda environement
       env:
-        tag: ${{ steps.tags.outputs.tag }}
+        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
       run: |
         docker run --rm ${tag} conda list --export
 
     - name: Make sure voms tools are working
       env:
-        tag: ${{ steps.tags.outputs.tag }}
+        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
       run: |
         ERROR=$(docker run ${tag} voms-proxy-info 2>&1 > /dev/null; exit 0)
         TEST=$(echo -e "\nCouldn't find a valid proxy.\n")
@@ -196,7 +241,7 @@ jobs:
     - name: Test Pytest environement v0
       if: ${{ matrix.image_dir == 'coffea-base' }}
       env:
-        tag: ${{ steps.tags.outputs.tag }}
+        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
       run: |
         docker run --rm -v ${{ github.workspace }}:/tmp/workspace ${tag} \
         sh -c "pip install -U pytest && cd tmp/workspace && pytest -m v0"
@@ -204,7 +249,7 @@ jobs:
     - name: Test Pytest environement CalVer
       if: ${{ matrix.image_dir != 'coffea-base' }}
       env:
-        tag: ${{ steps.tags.outputs.tag }}
+        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
       run: |
         docker run --rm -v ${{ github.workspace }}:/tmp/workspace ${tag} \
         sh -c "pip install -U pytest && cd tmp/workspace && pytest -m calver"
@@ -215,7 +260,7 @@ jobs:
       with:
         platforms: linux/amd64
         push: ${{  github.event_name == 'push' }}
-        tags: ${{ steps.tags.outputs.tags }}
+        tags: ${{ steps.tags.outputs.tags }},${{ steps.osgtags.outputs.osgtags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
@@ -228,7 +273,7 @@ jobs:
       with:
         platforms: linux/amd64
         push: ${{  github.event_name == 'push' }}
-        tags: ${{ steps.tags.outputs.tags }}
+        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
@@ -238,7 +283,7 @@ jobs:
     - name: Push to Harbor Hub
       if: ${{ github.event_name == 'push' }}
       env:
-        TAGS: ${{ steps.tags.outputs.tags }}
+        TAGS: ${{ steps.tags.outputs.osgtags }}
       run: |
         for tag in $(echo $TAGS | tr ',' ' '); do
           harbor_tag="hub.opensciencegrid.org/${tag}"
