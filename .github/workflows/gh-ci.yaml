@@ -150,7 +150,7 @@ jobs:
         echo "::set-output name=tag::${tag}"
         echo "::set-output name=tags::${tags}"
 
-    - name: Generate OSG tags  (we are going to remove it as soon as we have coffeateam space)
+    - name: Generate OSG tags (we are going to remove it as soon as we have coffeateam space)
       id: osgtags
       env:
         image_dir: ${{ matrix.image_dir }}
@@ -171,7 +171,7 @@ jobs:
           else
             osgtag="${image}:${release}-py${python}"
           fi
-          osgtags=${image}:latest-py${python},$tag
+          osgtags=${image}:latest-py${python},$osgtag
           # latest tag
           if [ ${python} == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
             osgtags=${image}:latest,$osgtags
@@ -221,13 +221,13 @@ jobs:
 
     - name: Test Conda environement
       env:
-        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
+        tag: ${{ steps.tags.outputs.tag }}
       run: |
         docker run --rm ${tag} conda list --export
 
     - name: Make sure voms tools are working
       env:
-        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
+        tags: ${{ steps.tags.outputs.tag }}
       run: |
         ERROR=$(docker run ${tag} voms-proxy-info 2>&1 > /dev/null; exit 0)
         TEST=$(echo -e "\nCouldn't find a valid proxy.\n")
@@ -241,7 +241,7 @@ jobs:
     - name: Test Pytest environement v0
       if: ${{ matrix.image_dir == 'coffea-base' }}
       env:
-        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
+        tag: ${{ steps.tags.outputs.tag }}
       run: |
         docker run --rm -v ${{ github.workspace }}:/tmp/workspace ${tag} \
         sh -c "pip install -U pytest && cd tmp/workspace && pytest -m v0"
@@ -249,7 +249,7 @@ jobs:
     - name: Test Pytest environement CalVer
       if: ${{ matrix.image_dir != 'coffea-base' }}
       env:
-        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
+        tag: ${{ steps.tags.outputs.tag }}
       run: |
         docker run --rm -v ${{ github.workspace }}:/tmp/workspace ${tag} \
         sh -c "pip install -U pytest && cd tmp/workspace && pytest -m calver"
