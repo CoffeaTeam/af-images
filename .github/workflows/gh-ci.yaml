@@ -29,7 +29,10 @@ jobs:
       matrix:
         image_dir: [coffea-base, coffea-dask]
         distro: [almalinux8, almalinux9, almalinux9-noml, almalinux9-eaf]
-        python: ["3.10", "3.11", "3.12"]
+        #python: ["3.10", "3.11", "3.12"]
+        # Disabling python 3.11 with error:
+        # Out of memory allocating 18446744071562067991*4 bytes!
+        python: ["3.10", "3.12"]
         exclude:
           - image_dir: coffea-base
             distro: almalinux9-noml
@@ -227,7 +230,7 @@ jobs:
 
     - name: Make sure voms tools are working
       env:
-        tags: ${{ steps.tags.outputs.tag }}
+        tag: ${{ steps.tags.outputs.tag }}
       run: |
         ERROR=$(docker run ${tag} voms-proxy-info 2>&1 > /dev/null; exit 0)
         TEST=$(echo -e "\nCouldn't find a valid proxy.\n")
