@@ -29,7 +29,10 @@ jobs:
       matrix:
         image_dir: [coffea-base, coffea-dask]
         distro: [almalinux8, almalinux9, almalinux9-noml, almalinux9-eaf]
-        python: ["3.10", "3.11", "3.12"]
+        #python: ["3.10", "3.11", "3.12"]
+        # Disabling python 3.11 with error:
+        # Out of memory allocating 18446744071562067991*4 bytes!
+        python: ["3.10", "3.12"]
         exclude:
           - image_dir: coffea-base
             distro: almalinux9-noml
@@ -104,7 +107,7 @@ jobs:
     - name: Workaround to free up 5GB of space # see https://github.com/actions/runner-images/issues/709#issuecomment-612569242
       run: sudo rm -rf "/usr/local/share/boost" && sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
-    - name: Generate tags
+    - name: Generate Docker and OSG tags 
       id: tags
       env:
         image_dir: ${{ matrix.image_dir }}
@@ -150,12 +153,57 @@ jobs:
         echo "::set-output name=tag::${tag}"
         echo "::set-output name=tags::${tags}"
 
+    - name: Generate OSG tags (we are going to remove it as soon as we have coffeateam space)
+      id: osgtags
+      env:
+        image_dir: ${{ matrix.image_dir }}
+        python: ${{ matrix.python }}
+        distro: ${{ matrix.distro }}
+        releasev0: ${{ env.releasev0 }}
+        release: ${{ env.release }}
+        python_latest: ${{ env.python_latest}}
+        stable: ${{ startsWith(github.ref, 'refs/tags') }}
+        ref_branch: ${{ github.ref }}
+      run: |
+        image="coffea-casa/${image_dir}-${distro}"
+        image_default="coffea-casa/${image_dir}"
+        # release osgtag or in case other case make it dev
+        if [ "$stable" == "true" ]; then
+          if [ ${image_dir} == 'coffea-base' ]; then
+            osgtag="${image}:${releasev0}-py${python}"
+          else
+            osgtag="${image}:${release}-py${python}"
+          fi
+          osgtags=${image}:latest-py${python},$osgtag
+          # latest tag
+          if [ ${python} == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
+            osgtags=${image}:latest,$osgtags
+          fi
+        else
+          if [ "$ref_branch" == "refs/heads/main" ]; then
+            osgtag="${image}:head-py${python}"
+            osgtags=$osgtag
+            if [ "$python" == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
+              osgtags=${image}:head,$osgtags
+            fi
+          else
+            osgtag="${image}:dev-py${python}"
+            osgtags=$osgtag
+            if [ "$python" == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
+              osgtags=${image}:dev,$osgtags
+            fi
+          fi
+        fi
+
+        echo "::set-output name=osgtag::${osgtags}"
+        echo "::set-output name=osgtags::${osgtags}"
+
     - name: Build base v0
       if: ${{ matrix.image_dir == 'coffea-base' }}
       uses: docker/build-push-action@v6
       with:
         load: true
-        tags: ${{ steps.tags.outputs.tags }}
+        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
@@ -167,7 +215,7 @@ jobs:
       uses: docker/build-push-action@v6
       with:
         load: true
-        tags: ${{ steps.tags.outputs.tags }}
+        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
@@ -215,7 +263,7 @@ jobs:
       with:
         platforms: linux/amd64
         push: ${{  github.event_name == 'push' }}
-        tags: ${{ steps.tags.outputs.tags }}
+        tags: ${{ steps.tags.outputs.tags }},${{ steps.osgtags.outputs.osgtags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
@@ -228,10 +276,22 @@ jobs:
       with:
         platforms: linux/amd64
         push: ${{  github.event_name == 'push' }}
-        tags: ${{ steps.tags.outputs.tags }}
+        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
           python=${{ matrix.python }}
           releasev0=${{ env.releasev0 }}
+
+    - name: Push to Harbor Hub
+      if: ${{ github.event_name == 'push' }}
+      env:
+        TAGS: ${{ steps.tags.outputs.osgtags }}
+      run: |
+        for tag in $(echo $TAGS | tr ',' ' '); do
+          harbor_tag="hub.opensciencegrid.org/${tag}"
+            echo "Tagging $tag -> $harbor_tag"
+            docker tag $tag $harbor_tag
+            docker push $harbor_tag
+          done
 
