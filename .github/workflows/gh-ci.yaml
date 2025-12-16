@@ -263,7 +263,7 @@ jobs:
       with:
         platforms: linux/amd64
         push: ${{  github.event_name == 'push' }}
-        tags: ${{ steps.tags.outputs.tags }},${{ steps.osgtags.outputs.osgtags }}
+        tags: ${{ steps.tags.outputs.tags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
@@ -276,7 +276,7 @@ jobs:
       with:
         platforms: linux/amd64
         push: ${{  github.event_name == 'push' }}
-        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
+        tags: ${{ steps.tags.outputs.tags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
         build-args: |
