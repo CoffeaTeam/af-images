@@ -31,9 +31,10 @@ jobs:
         registry: [docker.io, hub.opensciencegrid.org]
         distro: [almalinux8, almalinux9, almalinux9-noml, almalinux9-eaf]
         #python: ["3.10", "3.11", "3.12"]
-        # Disabling python 3.11 with error:
+        ## Disabling python 3.11 with error:
         # Out of memory allocating 18446744071562067991*4 bytes!
-        python: ["3.10", "3.12"]
+        ## Disabling python 3.10 because of timeout errors during build
+        python: ["3.12"]
         exclude:
           - image_dir: coffea-base
             distro: almalinux9-noml
