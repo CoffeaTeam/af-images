@@ -28,6 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         image_dir: [coffea-base, coffea-dask]
+        registry: [docker.io, hub.opensciencegrid.org]
         distro: [almalinux8, almalinux9, almalinux9-noml, almalinux9-eaf]
         #python: ["3.10", "3.11", "3.12"]
         # Disabling python 3.11 with error:
@@ -118,9 +119,10 @@ jobs:
         python_latest: ${{ env.python_latest}}
         stable: ${{ startsWith(github.ref, 'refs/tags') }}
         ref_branch: ${{ github.ref }}
+        registry: ${{ matrix.registry }}
       run: |
-        image="coffeateam/${image_dir}-${distro}"
-        image_default="coffeateam/${image_dir}"
+        image="${registry}/coffeateam/${image_dir}-${distro}"
+        image_default="${registry}coffeateam/${image_dir}"
         
         # release tag or in case other case make it dev
         if [ "$stable" == "true" ]; then
@@ -152,51 +154,6 @@ jobs:
 
         echo "::set-output name=tag::${tag}"
         echo "::set-output name=tags::${tags}"
-
-    - name: Generate OSG tags (we are going to remove it as soon as we have coffeateam space)
-      id: osgtags
-      env:
-        image_dir: ${{ matrix.image_dir }}
-        python: ${{ matrix.python }}
-        distro: ${{ matrix.distro }}
-        releasev0: ${{ env.releasev0 }}
-        release: ${{ env.release }}
-        python_latest: ${{ env.python_latest}}
-        stable: ${{ startsWith(github.ref, 'refs/tags') }}
-        ref_branch: ${{ github.ref }}
-      run: |
-        image="coffea-casa/${image_dir}-${distro}"
-        image_default="coffea-casa/${image_dir}"
-        # release osgtag or in case other case make it dev
-        if [ "$stable" == "true" ]; then
-          if [ ${image_dir} == 'coffea-base' ]; then
-            osgtag="${image}:${releasev0}-py${python}"
-          else
-            osgtag="${image}:${release}-py${python}"
-          fi
-          osgtags=${image}:latest-py${python},$osgtag
-          # latest tag
-          if [ ${python} == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
-            osgtags=${image}:latest,$osgtags
-          fi
-        else
-          if [ "$ref_branch" == "refs/heads/main" ]; then
-            osgtag="${image}:head-py${python}"
-            osgtags=$osgtag
-            if [ "$python" == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
-              osgtags=${image}:head,$osgtags
-            fi
-          else
-            osgtag="${image}:dev-py${python}"
-            osgtags=$osgtag
-            if [ "$python" == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
-              osgtags=${image}:dev,$osgtags
-            fi
-          fi
-        fi
-
-        echo "::set-output name=osgtag::${osgtags}"
-        echo "::set-output name=osgtags::${osgtags}"
 
     - name: Build base v0
       if: ${{ matrix.image_dir == 'coffea-base' }}
