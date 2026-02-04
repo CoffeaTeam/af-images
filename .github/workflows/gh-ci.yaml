@@ -34,7 +34,7 @@ jobs:
         ## Disabling python 3.11 with error:
         # Out of memory allocating 18446744071562067991*4 bytes!
         ## Disabling python 3.10 because of timeout errors during build
-        python: ["3.12"]
+        python: ["3.12", "3.13"]
         exclude:
           - image_dir: coffea-base
             distro: almalinux9-noml
