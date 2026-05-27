@@ -22,16 +22,19 @@ RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Mini
 
 COPY environment-noml.yaml  /
 
+ENV MAMBA_NO_LOW_SPEED_LIMIT=1 \
+    CONDA_PKGS_DIRS=/opt/conda/pkgs
+
 RUN export G_SLICE=always-malloc \
-    && mamba install -y python=${PYTHON_VERSION}
-
-RUN CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba env update --file /environment-noml.yaml
-
-RUN mamba clean -tipy \
+    && mamba install -y python=${PYTHON_VERSION} \
+    && CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba env update --file /environment-noml.yaml \
+    # Verify environment is intact before cleaning
+    && mamba run python --version \
+    && conda clean -tipy \
     && find /usr/local -type f -name '*.a' -delete \
     && find /usr/local -type f -name '*.pyc' -delete \
     && find /usr/local -type f -name '*.js.map' -delete \
-    && rm -rf /usr/local/pkgs
+    && rm -rf /opt/conda/pkgs
 
 # Make a symbolic link between installation /opt/conda/etc/grid-security and actual directory /etc/grid-security
 RUN ln -s /usr/local/etc/grid-security /etc/grid-security && \
