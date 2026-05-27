@@ -12,11 +12,11 @@ RUN dnf install -y epel-release && \
     dnf install -y wget bzip2 ca-certificates git wget libgfortran which zsh emacs vim htop man man-pages && \
     dnf clean all
 
-RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" -O /tmp/miniforge.sh && \
+RUN wget "https://github.com/conda-forge/miniforge/releases/download/24.11.3-2/Miniforge3-$(uname)-$(uname -m).sh" -O /tmp/miniforge.sh && \
     bash /tmp/miniforge.sh -bfp /usr/local && \
     rm /tmp/miniforge.sh && \
     conda clean --tarballs --index-cache --packages --yes && \
-    conda clean --force-pkgs-dirs --all --yes  && \
+    conda clean --force-pkgs-dirs --all --yes && \
     echo ". /usr/local/etc/profile.d/conda.sh && conda activate base" >> /etc/skel/.bashrc && \
     echo ". /usr/local/etc/profile.d/conda.sh && conda activate base" >> ~/.bashrc
 
@@ -25,8 +25,6 @@ COPY environment.yaml  /
 RUN export G_SLICE=always-malloc \
     && mamba install -y \
         python=${PYTHON_VERSION} \
-        "conda<26" \
-        "conda-libmamba-solver>=23" \
     && CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba env update --file /environment.yaml \
     && mamba clean -tipy \
     && find /usr/local -type f -name '*.a' -delete \
