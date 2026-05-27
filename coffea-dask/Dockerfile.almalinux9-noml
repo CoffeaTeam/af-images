@@ -23,10 +23,11 @@ RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Mini
 COPY environment-noml.yaml  /
 
 RUN export G_SLICE=always-malloc \
-    && micromamba install -y -n base python=${PYTHON_VERSION} \
+    && mamba install -y python=${PYTHON_VERSION} \
     && CONDA_OVERRIDE_ARCHSPEC=x86_64 \
-       micromamba env update -n base --file /environment-noml.yaml \
-    && micromamba clean -tipy \
+       CONDA_SOLVER=classic \
+       mamba env update --file /environment-noml.yaml \
+    && mamba clean -tipy \
     && find /usr/local -type f -name '*.a' -delete \
     && find /usr/local -type f -name '*.pyc' -delete \
     && find /usr/local -type f -name '*.js.map' -delete \
