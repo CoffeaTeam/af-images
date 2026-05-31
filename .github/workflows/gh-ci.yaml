@@ -14,7 +14,7 @@ env:
   GITHUB_SHA: ${{ github.sha }}
   GITHUB_REF: ${{ github.ref }}
   # Update each time there is added latest python: it will be used for `latest` tag
-  python_latest: "3.12"
+  python_latest: "3.13"
   python_latestv0: "3.10"
   # For coffea 2024.x.x we have conda release, github CI bot will detect new version and open PR with changes
   release: "2026.5.0"
@@ -31,7 +31,7 @@ jobs:
         #registry: [docker.io, hub.opensciencegrid.org]
         registry: [docker.io]
         distro: [almalinux8, almalinux9, almalinux9-noml, almalinux9-eaf]
-        python: ["3.11", "3.12", "3.13"]
+        python: ["3.10", "3.12", "3.13"]
         exclude:
           - image_dir: coffea-base
             distro: almalinux9-noml
@@ -42,7 +42,7 @@ jobs:
           - image_dir: coffea-base
             python: 3.13
           - image_dir: coffea-dask
-            python: 3.11
+            python: 3.10
     name: ${{ matrix.image_dir }}-${{ matrix.distro }}-${{ matrix.python }}
     runs-on: ubuntu-latest
     permissions:
