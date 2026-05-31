@@ -56,5 +56,5 @@ dependencies:
   - coffea=2026.5.0
   - onnxruntime
   - fsspec-xrootd
-  - tritonclient
-  - tritonclient-grpc
+  - pip:
+    - tritonclient[grpc,http]

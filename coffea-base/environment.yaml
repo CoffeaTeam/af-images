@@ -3,6 +3,7 @@ channels:
   - conda-forge
 dependencies:
   # python version specified in Dockerfile
+  - setuptools<=71
   - gxx
   - voms # x509 proxy system
   - ca-policy-lcg # WLCG trusted CAs
@@ -49,3 +50,9 @@ dependencies:
   - pip
   - rucio-clients
   - pytorch_geometric
+  - onnxruntime
+  - pip:
+    - awkward == 1.10.5
+    - coffea == 0.7.31
+    - fastjet == 3.4.0.1 # LAST VERSION working with awkward1
+    - tritonclient[grpc,http]
