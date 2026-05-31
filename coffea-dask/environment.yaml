@@ -1,8 +1,6 @@
 name: base
 channels:
   - conda-forge
-  - pyg
-  - pytorch
 dependencies:
   # python version specified in Dockerfile
   #- gxx
@@ -24,7 +22,7 @@ dependencies:
   - ndcctools
     # core scipy
     #- nomkl # no Intel math kernel library, reduces image size
-  - numpy
+  - numpy>=2
   - scipy
   - pandas
     # compression
@@ -49,13 +47,8 @@ dependencies:
     # ML
   - xgboost
   - pytorch
-  - torch-scatter
+  - pytorch_geometric
   - pip
-    # pyg
-  - pyg
-  - pytorch-cluster
-  - pytorch-sparse
-  - pytorch-spline-conv
   - rucio-clients
   - fastjet
   - coffea=2026.5.0
