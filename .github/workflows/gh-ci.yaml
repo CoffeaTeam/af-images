@@ -31,7 +31,7 @@ jobs:
         #registry: [docker.io, hub.opensciencegrid.org]
         registry: [docker.io]
         distro: [almalinux8, almalinux9, almalinux9-noml, almalinux9-eaf]
-        python: ["3.11", "3.12", "3.13", "3.14"]
+        python: ["3.11", "3.12", "3.13"]
         exclude:
           - image_dir: coffea-base
             distro: almalinux9-noml
@@ -41,8 +41,6 @@ jobs:
             python: 3.12
           - image_dir: coffea-base
             python: 3.13
-          - image_dir: coffea-base
-            python: 3.14
           - image_dir: coffea-dask
             python: 3.11
     name: ${{ matrix.image_dir }}-${{ matrix.distro }}-${{ matrix.python }}
