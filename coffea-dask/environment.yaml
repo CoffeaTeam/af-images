@@ -51,7 +51,7 @@ dependencies:
   - pip
   - rucio-clients
   - fastjet
-  - coffea=2026.5.0
+  - coffea=2026.4.0
   - onnxruntime
   - fsspec-xrootd
   - pip:
