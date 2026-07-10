@@ -1,13 +1,15 @@
 name: base
 channels:
   - conda-forge
+  - pyg
+  - pytorch
 dependencies:
   # python version specified in Dockerfile
   #- gxx
   - voms # x509 proxy system
   - ca-policy-lcg # WLCG trusted CAs
   - xrootd
-  - htcondor
+  - htcondor=24.1.1 # pin HTCondor for LPC https://github.com/CoffeaTeam/lpcjobqueue/issues/38
   - curl
     # jupyter-related
   - jupyterlab
@@ -15,15 +17,13 @@ dependencies:
   - dask_labextension
   - dask-gateway
   - dask-jobqueue
-  - dask<2025.4.0
-  - dask-awkward
-  - dask_histogram
+  - dask
   - bokeh
-  # workqueue
+  # Add workqueue
   - ndcctools
     # core scipy
     #- nomkl # no Intel math kernel library, reduces image size
-  - numpy>=2
+  - numpy
   - scipy
   - pandas
     # compression
@@ -45,8 +45,20 @@ dependencies:
   - awkward
   - vector
   - hist
+    # ML
+  - xgboost
+  - pytorch
+  - torch-scatter
   - pip
+    # pyg
+  - pyg
+  - pytorch-cluster
+  - pytorch-sparse
+  - pytorch-spline-conv
   - rucio-clients
   - fastjet
-  - coffea=2026.5.0
+  - coffea=2026.7.0
+  - onnxruntime
   - fsspec-xrootd
+  - tritonclient
+  - tritonclient-grpc
