@@ -17,7 +17,6 @@ dependencies:
   - dask-jobqueue
   - dask<2025.4.0
   - dask-awkward
-  - dask_histogram
   - bokeh
   # Add workqueue
   - ndcctools
