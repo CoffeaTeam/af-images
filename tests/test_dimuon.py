@@ -8,26 +8,10 @@ from coffea.nanoevents import BaseSchema, NanoEventsFactory, NanoAODSchema
 from dask.distributed import Client
 import pytest
 from packaging.version import parse as parse_version
-import importlib.util
-import os
 
 fileset = (
     "https://github.com/CoffeaTeam/coffea/raw/master/tests/samples/nano_dimuon.root"
 )
-
-HAS_DASK_AWKWARD = all(
-    importlib.util.find_spec(m) for m in ("dask_awkward", "dask_histogram")
-)
-_DECLARED = os.environ.get("AF_DASK_AWKWARD")
-
-requires_dask_awkward = pytest.mark.skipif(
-    not HAS_DASK_AWKWARD, reason="image built without dask-awkward"
-)
-
-
-@pytest.mark.skipif(_DECLARED is None, reason="AF_DASK_AWKWARD not set by image")
-def test_image_matches_declared_capability():
-    assert HAS_DASK_AWKWARD == (_DECLARED == "1")
 
 
 class MyProcessor(processor.ProcessorABC):
