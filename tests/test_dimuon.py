@@ -1,24 +1,23 @@
+import dask
+import awkward as ak
+import coffea
+from coffea import processor
+from coffea.nanoevents.methods import candidate
+from coffea.nanoevents import BaseSchema, NanoEventsFactory, NanoAODSchema
+
+from dask.distributed import Client
+import pytest
+from packaging.version import parse as parse_version
 import importlib.util
 import os
-
-import awkward as ak
-import dask
-import pytest
-from coffea import processor
-from coffea.nanoevents import BaseSchema
-from coffea.nanoevents.methods import candidate
-from dask.distributed import Client
 
 fileset = (
     "https://github.com/CoffeaTeam/coffea/raw/master/tests/samples/nano_dimuon.root"
 )
 
-# Capability detection: what is actually importable in this image?
 HAS_DASK_AWKWARD = all(
     importlib.util.find_spec(m) for m in ("dask_awkward", "dask_histogram")
 )
-
-# What the image *claims* it has, baked in at build time by the Dockerfile.
 _DECLARED = os.environ.get("AF_DASK_AWKWARD")
 
 requires_dask_awkward = pytest.mark.skipif(
@@ -26,11 +25,8 @@ requires_dask_awkward = pytest.mark.skipif(
 )
 
 
-@pytest.mark.v0
-@pytest.mark.calver
 @pytest.mark.skipif(_DECLARED is None, reason="AF_DASK_AWKWARD not set by image")
 def test_image_matches_declared_capability():
-    """Guard against a solver regression pulling dask-awkward in or out."""
     assert HAS_DASK_AWKWARD == (_DECLARED == "1")
 
 
@@ -60,7 +56,7 @@ class MyProcessor(processor.ProcessorABC):
 
         h_mass = (
             hist_class.new.StrCat(["opposite", "same"], name="sign")
-            .Log(1000, 0.2, 200.0, name="mass", label=r"$m_{\mu\mu}$ [GeV]")
+            .Log(1000, 0.2, 200.0, name="mass", label="$m_{\mu\mu}$ [GeV]")
             .Int64()
         )
 
@@ -103,41 +99,49 @@ def test_processor_dimu_massv0():
 
 
 @pytest.mark.calver
-def test_dimu_mass_runner():
-    """Needs distributed only -- runs in both image variants."""
-    with Client() as client:
-        run = processor.Runner(
-            executor=processor.DaskExecutor(client=client),
-            schema=BaseSchema,
-            chunksize=20,
-        )
-        out = run(
-            {"DoubleMuon": {"files": {fileset: "Events"}}},
-            processor_instance=MyProcessor("virtual"),
-        )
-        assert out["DoubleMuon"]["entries"] == 40
-
-
-@pytest.mark.calver
-@requires_dask_awkward
-def test_dimu_mass_dask():
-    """Needs hist.dask -> dask_histogram. Skipped on the experimental image."""
+def test_dimu_masscalver():
     from coffea.dataset_tools import apply_to_fileset, preprocess
+    if parse_version(coffea.__version__) > parse_version("2025.3.0"):
+        with Client() as client:
+            executor = processor.DaskExecutor(client=client)
+            run = processor.Runner(
+                executor=executor,
+                schema=BaseSchema,
+                chunksize=20,
+            )
+            out = run(
+                {"DoubleMuon": {"files": {fileset: "Events"}}},
+                processor_instance=MyProcessor("virtual"),
+            )
+            print(out)
+            assert out["DoubleMuon"]["entries"] == 40
 
-    with Client() as client:
-        dataset_runnable, _ = preprocess(
-            {"DoubleMuon": {"files": {fileset: "Events"}}},
-            step_size=20,
-            align_clusters=False,
-            files_per_batch=1,
-            skip_bad_files=True,
-            save_form=False,
-            scheduler=client,
-        )
-        to_compute = apply_to_fileset(
-            MyProcessor("dask"),
-            dataset_runnable,
-            schemaclass=BaseSchema,
-        )
-        (out,) = dask.compute(to_compute)
-        assert out["DoubleMuon"]["entries"] == 40
+            dataset_runnable, dataet_updated = preprocess(
+                {"DoubleMuon": {"files": {fileset: "Events"}}},
+                step_size=20,
+                align_clusters=False,
+                files_per_batch=1,
+                skip_bad_files=True,
+                save_form=False,
+                scheduler=client,
+            )
+            to_compute = apply_to_fileset(
+                MyProcessor("dask"),
+                dataset_runnable,
+                schemaclass=BaseSchema,
+            )
+            (out,) = dask.compute(to_compute)
+            print(out)
+            assert out["DoubleMuon"]["DoubleMuon"]["entries"] == 40
+    else:
+        with Client() as client:
+            events = NanoEventsFactory.from_root(
+                {fileset: "Events"},
+                metadata={"dataset": "DoubleMuon"},
+                schemaclass=BaseSchema
+                ).events()
+            p = MyProcessor("dask")
+            out = p.process(events)
+            (computed,) = dask.compute(out)
+            assert computed["DoubleMuon"]["entries"] == 40
+
