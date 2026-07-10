@@ -3,6 +3,7 @@ FROM almalinux:8
 ARG python
 ARG release
 ARG TARGETPLATFORM
+ARG WITH_DASK_AWKWARD=1
 
 ENV PYTHON_VERSION=${python}
 
@@ -20,17 +21,37 @@ RUN wget "https://github.com/conda-forge/miniforge/releases/download/26.1.1-3/Mi
     echo ". /usr/local/etc/profile.d/conda.sh && conda activate base" >> /etc/skel/.bashrc && \
     echo ". /usr/local/etc/profile.d/conda.sh && conda activate base" >> ~/.bashrc
 
-COPY environment.yaml  /
+COPY environment-noml.yaml /
+COPY environment-noml-no-dask-awk.yaml /
 
 RUN export G_SLICE=always-malloc \
     && mamba install -y \
         python=${PYTHON_VERSION} \
     && CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba env update --file /environment.yaml \
+    && if [ "$WITH_DASK_AWKWARD" = "1" ]; then \
+         CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba env update --file /environment-no-dask-awk.yaml; \
+       fi \
     && mamba clean -tipy \
     && find /usr/local -type f -name '*.a' -delete \
     && find /usr/local -type f -name '*.pyc' -delete \
     && find /usr/local -type f -name '*.js.map' -delete \
     && rm -rf /usr/local/pkgs
+
+# Bake the declared capability into the image so the tests can read it.
+ENV AF_DASK_AWKWARD=${WITH_DASK_AWKWARD}
+
+# Fail the build if the solver did not do what we asked.
+RUN python - <<'PY'
+import importlib.util, os, sys
+want = os.environ["AF_DASK_AWKWARD"] == "1"
+have = all(importlib.util.find_spec(m) for m in ("dask_awkward", "dask_histogram"))
+if want != have:
+    sys.exit(f"AF_DASK_AWKWARD={os.environ['AF_DASK_AWKWARD']} but dask-awkward present={have}")
+print(f"variant OK: dask-awkward present={have}")
+PY
+
+# The experiment readout: which distributed did this variant land on?
+RUN python -c "import distributed; print('distributed', distributed.__version__)"
 
 # Make a symbolic link between installation /opt/conda/etc/grid-security and actual directory /etc/grid-security
 RUN ln -s /usr/local/etc/grid-security /etc/grid-security && \
