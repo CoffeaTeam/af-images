@@ -21,7 +21,7 @@ RUN wget "https://github.com/conda-forge/miniforge/releases/download/26.1.1-3/Mi
     echo ". /usr/local/etc/profile.d/conda.sh && conda activate base" >> /etc/skel/.bashrc && \
     echo ". /usr/local/etc/profile.d/conda.sh && conda activate base" >> ~/.bashrc
 
-COPY environment-noml.yaml /
+COPY environment.yaml /
 COPY environment-noml-no-dask-awk.yaml /
 
 RUN export G_SLICE=always-malloc \
