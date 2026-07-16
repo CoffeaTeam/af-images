@@ -1,5 +1,5 @@
 import importlib.util
-import os
+from pathlib import Path
 
 import awkward as ak
 import dask
@@ -13,24 +13,26 @@ fileset = (
     "https://github.com/CoffeaTeam/coffea/raw/master/tests/samples/nano_dimuon.root"
 )
 
-# Capability detection: what is actually importable in this image?
+# What is actually importable in this image.
 HAS_DASK_AWKWARD = all(
     importlib.util.find_spec(m) for m in ("dask_awkward", "dask_histogram")
 )
 
-# What the image *claims* it has, baked in at build time by the Dockerfile.
-_DECLARED = os.environ.get("AF_DASK_AWKWARD")
+# What the image's environment yaml asked for, written at build time by the
+# Dockerfile. Absent on images built before this file existed (e.g. coffea-0.7).
+_marker = Path("/etc/af_dask_awkward")
+_DECLARED = _marker.read_text().strip() if _marker.exists() else None
 
 requires_dask_awkward = pytest.mark.skipif(
-    not HAS_DASK_AWKWARD, reason="image built without dask-awkward"
+    not HAS_DASK_AWKWARD, reason="image built without dask-awkward/dask-histogram"
 )
 
 
 @pytest.mark.v0
 @pytest.mark.calver
-@pytest.mark.skipif(_DECLARED is None, reason="AF_DASK_AWKWARD not set by image")
+@pytest.mark.skipif(_DECLARED is None, reason="/etc/af_dask_awkward not set by image")
 def test_image_matches_declared_capability():
-    """Guard against a solver regression pulling dask-awkward in or out."""
+    """Guard against solver drift pulling dask-awkward in or out."""
     assert HAS_DASK_AWKWARD == (_DECLARED == "1")
 
 
@@ -104,7 +106,7 @@ def test_processor_dimu_massv0():
 
 @pytest.mark.calver
 def test_dimu_mass_runner():
-    """Needs distributed only -- runs in both image variants."""
+    """Needs distributed only -- runs in every calver image."""
     with Client() as client:
         run = processor.Runner(
             executor=processor.DaskExecutor(client=client),
@@ -121,7 +123,7 @@ def test_dimu_mass_runner():
 @pytest.mark.calver
 @requires_dask_awkward
 def test_dimu_mass_dask():
-    """Needs hist.dask -> dask_histogram. Skipped on the experimental image."""
+    """Needs hist.dask -> dask_histogram. Skipped on images without it."""
     from coffea.dataset_tools import apply_to_fileset, preprocess
 
     with Client() as client:

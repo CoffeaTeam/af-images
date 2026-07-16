@@ -17,15 +17,12 @@ env:
   python_latest: "3.13"
   python_latestv0: "3.11"
   # For coffea 2024.x.x we have conda release, github CI bot will detect new version and open PR with changes
-  release: "2026.5.0"
+  release: "2026.7.0"
   # For coffea 0.7.23 we dont have conda release, please update it manually, as well in coffea-base/environment.yaml
   releasev0: "0.7.31"
-  # Deprecation shim: also push the pre-rename image names as aliases of the
-  # new ones (same digest, no content change):
-  #   coffea-base-x -> coffea-0.7-x
-  #   coffea-dask-x -> coffea-dak-x
-  # coffea-x is new and has no legacy name. Set to "false" to stop publishing
-  # the old names once users have migrated, then delete the shim entirely.
+  # Deprecation shim: also publish the pre-rename image names as aliases of the
+  # new ones (same digest, no content change). Set to "false" once users have
+  # migrated, then delete the shim.
   push_legacy_aliases: "true"
 
 jobs:
@@ -33,48 +30,44 @@ jobs:
   matrix-build:
     strategy:
       fail-fast: false
+      # Explicit list rather than a product. `dask-awkward or not` is a property
+      # of each environment yaml, not a free axis: environment-noml.yaml has no
+      # dask-awkward and no dask pin, so a product over distro x with/without
+      # generates combinations that cannot exist.
+      #
+      # flavour -> published image name (${flavour}-${distro}):
+      #   coffea-0.7   coffea 0.7.31
+      #   coffea-dak   calver, has dask-awkward ("dak" is the import alias)
+      #   coffea       calver, no dask-awkward, no dask upper pin
       matrix:
-        image_dir: [coffea-base, coffea-dask]
-        #registry: [docker.io, hub.opensciencegrid.org]
-        registry: [docker.io]
-        distro: [almalinux8, almalinux9, almalinux9-noml, almalinux9-eaf]
-        python: ["3.11", "3.12", "3.13"]
-        # Which calver flavour to build from the coffea-dask sources:
-        #   "1" -> coffea-dak-x : with dask-awkward/dask-histogram, dask spec
-        #                         exactly as written in the environment yaml.
-        #   "0" -> coffea-x     : dask-awkward/dask-histogram filtered out AND
-        #                         the `dask<X` upper pin lifted.
-        # NB these are two axes at once. The dask pin in environment.yaml is
-        # hand-written, not imposed by dask-awkward (dask-awkward 2026.2.1
-        # resolves fine against dask 2025.3.1), so if coffea-x lands on a newer
-        # dask that is the pin removal talking, not the absence of dask-awkward.
-        with_dask_awkward: ["1", "0"]
-        exclude:
-          - image_dir: coffea-base
-            distro: almalinux9-noml
-          - image_dir: coffea-base
-            distro: almalinux9-eaf
-          - image_dir: coffea-base
-            python: "3.12"
-          - image_dir: coffea-base
-            python: "3.13"
-          - image_dir: coffea-dask
-            python: "3.11"
-          # coffea-base is coffea 0.7.x: no hist.dask code path, so the
-          # dask-awkward axis does not apply to it at all.
-          - image_dir: coffea-base
-            with_dask_awkward: "0"
-          # coffea-x is built for exactly one combination for now:
-          # almalinux9-noml / py3.13.
-          - distro: almalinux8
-            with_dask_awkward: "0"
-          - distro: almalinux9
-            with_dask_awkward: "0"
-          - distro: almalinux9-eaf
-            with_dask_awkward: "0"
-          - python: "3.12"
-            with_dask_awkward: "0"
-    name: ${{ matrix.image_dir }}-${{ matrix.distro }}-${{ matrix.python }}${{ matrix.with_dask_awkward == '0' && '-nodak' || '' }}
+        include:
+          # ---- coffea 0.7 ------------------------------------------------
+          - {image_dir: coffea-base, distro: almalinux8, base: "almalinux:8", python: "3.11", yaml: environment.yaml, nodak: "0", flavour: coffea-0.7, legacy: coffea-base}
+          - {image_dir: coffea-base, distro: almalinux9, base: "almalinux:9", python: "3.11", yaml: environment.yaml, nodak: "0", flavour: coffea-0.7, legacy: coffea-base}
+
+          # ---- calver, full env, has dask-awkward ------------------------
+          - {image_dir: coffea-dask, distro: almalinux8, base: "almalinux:8", python: "3.12", yaml: environment.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
+          - {image_dir: coffea-dask, distro: almalinux8, base: "almalinux:8", python: "3.13", yaml: environment.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
+          - {image_dir: coffea-dask, distro: almalinux9, base: "almalinux:9", python: "3.12", yaml: environment.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
+          - {image_dir: coffea-dask, distro: almalinux9, base: "almalinux:9", python: "3.13", yaml: environment.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
+
+          # ---- THE NEW IMAGE ---------------------------------------------
+          # Same full env as coffea-dak-almalinux9:py3.13, with dask-awkward
+          # stripped and the dask pin lifted. Like-for-like comparison against
+          # the row directly above -- unlike noml, it keeps pytorch/xgboost.
+          - {image_dir: coffea-dask, distro: almalinux9, base: "almalinux:9", python: "3.13", yaml: environment.yaml, nodak: "1", flavour: coffea, legacy: ""}
+
+          # ---- calver, noml: yaml already has no dask-awkward, no pin -----
+          - {image_dir: coffea-dask, distro: almalinux9-noml, base: "almalinux:9", python: "3.12", yaml: environment-noml.yaml, nodak: "0", flavour: coffea, legacy: coffea-dask}
+          - {image_dir: coffea-dask, distro: almalinux9-noml, base: "almalinux:9", python: "3.13", yaml: environment-noml.yaml, nodak: "0", flavour: coffea, legacy: coffea-dask}
+
+          # ---- calver, eaf -----------------------------------------------
+          # NOTE: environment-eaf.yaml lists dask-awkward but NOT dask-histogram,
+          # so hist.dask is unimportable there and test_dimu_mass_dask skips.
+          # Tracked separately; not this PR.
+          - {image_dir: coffea-dask, distro: almalinux9-eaf, base: "almalinux:9", python: "3.12", yaml: environment-eaf.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
+          - {image_dir: coffea-dask, distro: almalinux9-eaf, base: "almalinux:9", python: "3.13", yaml: environment-eaf.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
+    name: ${{ matrix.flavour }}-${{ matrix.distro }}-py${{ matrix.python }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -145,44 +138,24 @@ jobs:
         image_dir: ${{ matrix.image_dir }}
         python: ${{ matrix.python }}
         distro: ${{ matrix.distro }}
+        flavour: ${{ matrix.flavour }}
+        legacy_flavour: ${{ matrix.legacy }}
         releasev0: ${{ env.releasev0 }}
         release: ${{ env.release }}
         python_latest: ${{ env.python_latest }}
         python_latestv0: ${{ env.python_latestv0 }}
         stable: ${{ startsWith(github.ref, 'refs/tags') }}
         ref_branch: ${{ github.ref }}
-        registry: ${{ matrix.registry }}
-        with_dask_awkward: ${{ matrix.with_dask_awkward }}
+        registry: docker.io
         push_legacy_aliases: ${{ env.push_legacy_aliases }}
       run: |
-        # ---- image naming ------------------------------------------------
-        # Deliberately decoupled from ${image_dir} (the source directory), so
-        # images can be renamed without moving directories. Edit here only.
-        #
-        #   coffea-0.7-x   coffea 0.7.31
-        #   coffea-dak-x   calver + dask-awkward/dask-histogram ("dak" is the
-        #                  usual import alias), dask spec as written in the yaml.
-        #   coffea-x       calver, no dask-awkward, dask upper pin lifted.
-        #
-        # coffea-base-x and coffea-dask-x are retired as canonical names, but
-        # are still published as aliases while push_legacy_aliases is true.
-        # Neither is reused for a different flavour, so an existing pull of
-        # coffea-dask-x keeps resolving to identical contents (== coffea-dak-x).
-        if [ "${image_dir}" == 'coffea-base' ]; then
-          flavour="coffea-0.7"
-          legacy_flavour="coffea-base"
-        elif [ "${with_dask_awkward}" == "1" ]; then
-          flavour="coffea-dak"
-          legacy_flavour="coffea-dask"
-        else
-          flavour="coffea"
-          legacy_flavour=""        # new flavour: no pre-rename name to alias
-        fi
-
         name="coffeateam/${flavour}-${distro}"
         image="${registry}/${name}"      # e.g. docker.io/coffeateam/coffea-dak-almalinux9
         osgimage="${name}"               # registry-less; Harbor prefix added at push time
 
+        # Pre-rename names, published as aliases of the same digest while
+        # push_legacy_aliases is true. No old name is reused for a different
+        # flavour, so an existing pull keeps resolving to identical contents.
         legacy_image=""
         legacy_osgimage=""
         if [ "${push_legacy_aliases}" == "true" ] && [ -n "${legacy_flavour}" ]; then
@@ -191,9 +164,6 @@ jobs:
           legacy_osgimage="${legacy_name}"
         fi
 
-        # ---- tag suffixes ------------------------------------------------
-        # Decide the tag names once, then apply the same list to both the
-        # docker.io image and the Harbor (OSG) image.
         if [ "${stable}" == "true" ]; then
           if [ "${image_dir}" == 'coffea-base' ]; then
             version_tag="${releasev0}-py${python}"
@@ -235,24 +205,6 @@ jobs:
         echo "tags=${tags}" >> "$GITHUB_OUTPUT"
         echo "osgtags=${osgtags}" >> "$GITHUB_OUTPUT"
 
-    # Both coffea-base/ and coffea-dask/ have a single parameterised Dockerfile;
-    # the distro is chosen by build args rather than by picking one of several
-    # near-identical files. ENV_YAML is only consumed by coffea-dask/.
-    - name: Resolve distro build args
-      id: distro
-      env:
-        distro: ${{ matrix.distro }}
-      run: |
-        case "${distro}" in
-          almalinux8)      base="almalinux:8"; yaml="environment.yaml" ;;
-          almalinux9)      base="almalinux:9"; yaml="environment.yaml" ;;
-          almalinux9-noml) base="almalinux:9"; yaml="environment-noml.yaml" ;;
-          almalinux9-eaf)  base="almalinux:9"; yaml="environment-eaf.yaml" ;;
-          *) echo "unknown distro: ${distro}" >&2; exit 1 ;;
-        esac
-        echo "base=${base}" >> "$GITHUB_OUTPUT"
-        echo "yaml=${yaml}" >> "$GITHUB_OUTPUT"
-
     - name: Build coffea-0.7
       if: ${{ matrix.image_dir == 'coffea-base' }}
       uses: docker/build-push-action@v6
@@ -262,11 +214,11 @@ jobs:
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile
         build-args: |
-          BASE_IMAGE=${{ steps.distro.outputs.base }}
+          BASE_IMAGE=${{ matrix.base }}
           python=${{ matrix.python }}
           releasev0=${{ env.releasev0 }}
 
-    - name: Build calver (coffea-dak / coffea)
+    - name: Build calver
       if: ${{ matrix.image_dir != 'coffea-base' }}
       uses: docker/build-push-action@v6
       with:
@@ -275,11 +227,11 @@ jobs:
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile
         build-args: |
-          BASE_IMAGE=${{ steps.distro.outputs.base }}
-          ENV_YAML=${{ steps.distro.outputs.yaml }}
+          BASE_IMAGE=${{ matrix.base }}
+          ENV_YAML=${{ matrix.yaml }}
+          NODAK=${{ matrix.nodak }}
           python=${{ matrix.python }}
           release=${{ env.release }}
-          WITH_DASK_AWKWARD=${{ matrix.with_dask_awkward }}
 
     - name: Test Conda environement
       env:
@@ -287,10 +239,10 @@ jobs:
       run: |
         docker run --rm ${tag} conda list --export
 
-    # Runs before the tests so it still prints when they fail. Diff this between
-    # coffea-dak-* and coffea-*: it is the readout the second flavour exists to
-    # produce. Remember both the pin and dask-awkward differ between them, so a
-    # newer dask here does not by itself implicate dask-awkward.
+    # Before the tests, so it prints even when they fail. Diff this between
+    # coffea-dak-almalinux9:py3.13 and coffea-almalinux9:py3.13 -- that pair
+    # differs only in dask-awkward and the pin, and is the readout the new
+    # image exists to produce.
     - name: Show resolved dask stack
       if: ${{ matrix.image_dir != 'coffea-base' }}
       env:
@@ -320,9 +272,9 @@ jobs:
         docker run --rm -v ${{ github.workspace }}:/tmp/workspace ${tag} \
         sh -c "pip install -U pytest && cd tmp/workspace && pytest -m v0 -rs"
 
-    # -rs prints skip reasons, so the coffea-x job shows
-    # "skipped: image built without dask-awkward" rather than looking like the
-    # test silently disappeared.
+    # -rs prints skip reasons, so images without dask-awkward show
+    # "skipped: image built without dask-awkward/dask-histogram" rather than
+    # looking like a test silently vanished.
     - name: Test Pytest environement CalVer
       if: ${{ matrix.image_dir != 'coffea-base' }}
       env:
@@ -331,7 +283,7 @@ jobs:
         docker run --rm -v ${{ github.workspace }}:/tmp/workspace ${tag} \
         sh -c "pip install -U pytest && cd tmp/workspace && pytest -m calver -rs"
 
-    - name: Build and push calver (coffea-dak / coffea)
+    - name: Build and push calver
       if: ${{ matrix.image_dir != 'coffea-base' }}
       uses: docker/build-push-action@v6
       with:
@@ -341,11 +293,11 @@ jobs:
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile
         build-args: |
-          BASE_IMAGE=${{ steps.distro.outputs.base }}
-          ENV_YAML=${{ steps.distro.outputs.yaml }}
+          BASE_IMAGE=${{ matrix.base }}
+          ENV_YAML=${{ matrix.yaml }}
+          NODAK=${{ matrix.nodak }}
           python=${{ matrix.python }}
           release=${{ env.release }}
-          WITH_DASK_AWKWARD=${{ matrix.with_dask_awkward }}
 
     - name: Build and push coffea-0.7
       if: ${{ matrix.image_dir == 'coffea-base' }}
@@ -357,7 +309,7 @@ jobs:
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile
         build-args: |
-          BASE_IMAGE=${{ steps.distro.outputs.base }}
+          BASE_IMAGE=${{ matrix.base }}
           python=${{ matrix.python }}
           releasev0=${{ env.releasev0 }}
 
