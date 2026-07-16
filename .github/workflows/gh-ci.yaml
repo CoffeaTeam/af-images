@@ -40,9 +40,14 @@ jobs:
         distro: [almalinux8, almalinux9, almalinux9-noml, almalinux9-eaf]
         python: ["3.11", "3.12", "3.13"]
         # Which calver flavour to build from the coffea-dask sources:
-        #   "1" -> coffea-dak-x : with dask-awkward/dask-histogram.
-        #                         dask/distributed pinned by dask-awkward.
-        #   "0" -> coffea-x     : no dask-awkward. dask/distributed unpinned.
+        #   "1" -> coffea-dak-x : with dask-awkward/dask-histogram, dask spec
+        #                         exactly as written in the environment yaml.
+        #   "0" -> coffea-x     : dask-awkward/dask-histogram filtered out AND
+        #                         the `dask<X` upper pin lifted.
+        # NB these are two axes at once. The dask pin in environment.yaml is
+        # hand-written, not imposed by dask-awkward (dask-awkward 2026.2.1
+        # resolves fine against dask 2025.3.1), so if coffea-x lands on a newer
+        # dask that is the pin removal talking, not the absence of dask-awkward.
         with_dask_awkward: ["1", "0"]
         exclude:
           - image_dir: coffea-base
@@ -156,8 +161,8 @@ jobs:
         #
         #   coffea-0.7-x   coffea 0.7.31
         #   coffea-dak-x   calver + dask-awkward/dask-histogram ("dak" is the
-        #                  usual import alias). dask/distributed pinned by dak.
-        #   coffea-x       calver, no dask-awkward. dask/distributed unpinned.
+        #                  usual import alias), dask spec as written in the yaml.
+        #   coffea-x       calver, no dask-awkward, dask upper pin lifted.
         #
         # coffea-base-x and coffea-dask-x are retired as canonical names, but
         # are still published as aliases while push_legacy_aliases is true.
@@ -230,6 +235,24 @@ jobs:
         echo "tags=${tags}" >> "$GITHUB_OUTPUT"
         echo "osgtags=${osgtags}" >> "$GITHUB_OUTPUT"
 
+    # Both coffea-base/ and coffea-dask/ have a single parameterised Dockerfile;
+    # the distro is chosen by build args rather than by picking one of several
+    # near-identical files. ENV_YAML is only consumed by coffea-dask/.
+    - name: Resolve distro build args
+      id: distro
+      env:
+        distro: ${{ matrix.distro }}
+      run: |
+        case "${distro}" in
+          almalinux8)      base="almalinux:8"; yaml="environment.yaml" ;;
+          almalinux9)      base="almalinux:9"; yaml="environment.yaml" ;;
+          almalinux9-noml) base="almalinux:9"; yaml="environment-noml.yaml" ;;
+          almalinux9-eaf)  base="almalinux:9"; yaml="environment-eaf.yaml" ;;
+          *) echo "unknown distro: ${distro}" >&2; exit 1 ;;
+        esac
+        echo "base=${base}" >> "$GITHUB_OUTPUT"
+        echo "yaml=${yaml}" >> "$GITHUB_OUTPUT"
+
     - name: Build coffea-0.7
       if: ${{ matrix.image_dir == 'coffea-base' }}
       uses: docker/build-push-action@v6
@@ -237,8 +260,9 @@ jobs:
         load: true
         tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
         context: ${{ matrix.image_dir }}
-        file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
+        file: ${{ matrix.image_dir }}/Dockerfile
         build-args: |
+          BASE_IMAGE=${{ steps.distro.outputs.base }}
           python=${{ matrix.python }}
           releasev0=${{ env.releasev0 }}
 
@@ -249,8 +273,10 @@ jobs:
         load: true
         tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
         context: ${{ matrix.image_dir }}
-        file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
+        file: ${{ matrix.image_dir }}/Dockerfile
         build-args: |
+          BASE_IMAGE=${{ steps.distro.outputs.base }}
+          ENV_YAML=${{ steps.distro.outputs.yaml }}
           python=${{ matrix.python }}
           release=${{ env.release }}
           WITH_DASK_AWKWARD=${{ matrix.with_dask_awkward }}
@@ -261,17 +287,17 @@ jobs:
       run: |
         docker run --rm ${tag} conda list --export
 
-    # Runs before the tests so it still prints when they fail. Diffing this
-    # between coffea-dak-* and coffea-* is the point of the second flavour:
-    # if `distributed` resolves to the same version in both, the pin is not
-    # coming from dask-awkward.
+    # Runs before the tests so it still prints when they fail. Diff this between
+    # coffea-dak-* and coffea-*: it is the readout the second flavour exists to
+    # produce. Remember both the pin and dask-awkward differ between them, so a
+    # newer dask here does not by itself implicate dask-awkward.
     - name: Show resolved dask stack
       if: ${{ matrix.image_dir != 'coffea-base' }}
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
         docker run --rm ${tag} \
-          conda list --export | grep -E '^(dask|distributed|dask-awkward|dask-histogram)=' || true
+          conda list --export | grep -E '^(dask|dask-core|distributed|dask-awkward|dask-histogram|dask-jobqueue|dask-gateway)=' || true
 
     - name: Make sure voms tools are working
       env:
@@ -313,8 +339,10 @@ jobs:
         push: ${{ github.event_name == 'push' }}
         tags: ${{ steps.tags.outputs.tags }}
         context: ${{ matrix.image_dir }}
-        file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
+        file: ${{ matrix.image_dir }}/Dockerfile
         build-args: |
+          BASE_IMAGE=${{ steps.distro.outputs.base }}
+          ENV_YAML=${{ steps.distro.outputs.yaml }}
           python=${{ matrix.python }}
           release=${{ env.release }}
           WITH_DASK_AWKWARD=${{ matrix.with_dask_awkward }}
@@ -327,8 +355,9 @@ jobs:
         push: ${{ github.event_name == 'push' }}
         tags: ${{ steps.tags.outputs.tags }}
         context: ${{ matrix.image_dir }}
-        file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
+        file: ${{ matrix.image_dir }}/Dockerfile
         build-args: |
+          BASE_IMAGE=${{ steps.distro.outputs.base }}
           python=${{ matrix.python }}
           releasev0=${{ env.releasev0 }}
 

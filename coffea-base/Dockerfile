@@ -1,4 +1,6 @@
-FROM almalinux:9
+# was: FROM almalinux:8   (or :9)
+ARG BASE_IMAGE=almalinux:9
+FROM ${BASE_IMAGE}
 
 ARG python
 ARG releasev0
@@ -21,7 +23,7 @@ RUN wget "https://github.com/conda-forge/miniforge/releases/download/24.11.3-2/M
     echo ". /usr/local/etc/profile.d/conda.sh && conda activate base" >> /etc/skel/.bashrc && \
     echo ". /usr/local/etc/profile.d/conda.sh && conda activate base" >> ~/.bashrc
 
-COPY environment.yaml /
+COPY  environment.yaml /
 
 RUN export G_SLICE=always-malloc \
     && mamba install -y python=${PYTHON_VERSION} \
