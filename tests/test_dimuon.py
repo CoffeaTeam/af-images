@@ -141,5 +141,11 @@ def test_dimu_mass_dask():
             dataset_runnable,
             schemaclass=BaseSchema,
         )
-        (out,) = dask.compute(to_compute)
-        assert out["DoubleMuon"]["entries"] == 40
+        (computed,) = dask.compute(to_compute)
+
+        # apply_to_fileset keys its result by dataset name, and process() also
+        # returns {dataset: ...}, so the result is nested twice. Runner does not
+        # show this because it accumulates the processor output and strips a
+        # level -- hence test_dimu_mass_runner indexing one level shallower.
+        out = computed["DoubleMuon"]["DoubleMuon"]
+        assert out["entries"] == 40
