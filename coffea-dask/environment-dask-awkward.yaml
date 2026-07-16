@@ -7,7 +7,7 @@ dependencies:
   - voms # x509 proxy system
   - ca-policy-lcg # WLCG trusted CAs
   - xrootd
-  - htcondor=24.1.1 # pin HTCondor for LPC https://github.com/CoffeaTeam/lpcjobqueue/issues/38
+  - htcondor
   - curl
     # jupyter-related
   - jupyterlab
@@ -15,13 +15,15 @@ dependencies:
   - dask_labextension
   - dask-gateway
   - dask-jobqueue
-  - dask
+  - dask<2025.4.0
+  - dask-awkward
+  - dask-histogram
   - bokeh
-  # workqueue
+  # Add workqueue
   - ndcctools
     # core scipy
     #- nomkl # no Intel math kernel library, reduces image size
-  - numpy
+  - numpy>=2
   - scipy
   - pandas
     # compression
@@ -43,8 +45,15 @@ dependencies:
   - awkward
   - vector
   - hist
+    # ML
+  - xgboost
+  - pytorch
+  - pytorch_geometric
   - pip
   - rucio-clients
   - fastjet
-  - coffea=2026.7.0
+  - coffea=2026.5.0
+  - onnxruntime
   - fsspec-xrootd
+  - pip:
+    - tritonclient[grpc,http]
