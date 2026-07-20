@@ -17,6 +17,7 @@ dependencies:
   - dask-jobqueue
   - dask<2025.4.0
   - dask-awkward
+  - dask-histogram
   - bokeh
   # Add workqueue
   - ndcctools
@@ -51,7 +52,7 @@ dependencies:
   - pip
   - rucio-clients
   - fastjet
-  - coffea=2026.5.0
+  - coffea=2026.7.0
   - onnxruntime
   - fsspec-xrootd
   - pip:

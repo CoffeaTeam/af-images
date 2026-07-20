@@ -17,33 +17,57 @@ env:
   python_latest: "3.13"
   python_latestv0: "3.11"
   # For coffea 2024.x.x we have conda release, github CI bot will detect new version and open PR with changes
-  release: "2026.5.0"
+  release: "2026.7.0"
   # For coffea 0.7.23 we dont have conda release, please update it manually, as well in coffea-base/environment.yaml
   releasev0: "0.7.31"
+  # Deprecation shim: also publish the pre-rename image names as aliases of the
+  # new ones (same digest, no content change). Set to "false" once users have
+  # migrated, then delete the shim.
+  push_legacy_aliases: "true"
 
 jobs:
 
   matrix-build:
     strategy:
       fail-fast: false
+      # Explicit list rather than a product. `dask-awkward or not` is a property
+      # of each environment yaml, not a free axis: environment-noml.yaml has no
+      # dask-awkward and no dask pin, so a product over distro x with/without
+      # generates combinations that cannot exist.
+      #
+      # flavour -> published image name (${flavour}-${distro}):
+      #   coffea-0.7   coffea 0.7.31
+      #   coffea-dak   calver, has dask-awkward ("dak" is the import alias)
+      #   coffea       calver, no dask-awkward, no dask upper pin
       matrix:
-        image_dir: [coffea-base, coffea-dask]
-        #registry: [docker.io, hub.opensciencegrid.org]
-        registry: [docker.io]
-        distro: [almalinux8, almalinux9, almalinux9-noml, almalinux9-eaf]
-        python: ["3.11", "3.12", "3.13"]
-        exclude:
-          - image_dir: coffea-base
-            distro: almalinux9-noml
-          - image_dir: coffea-base
-            distro: almalinux9-eaf
-          - image_dir: coffea-base
-            python: 3.12
-          - image_dir: coffea-base
-            python: 3.13
-          - image_dir: coffea-dask
-            python: 3.11
-    name: ${{ matrix.image_dir }}-${{ matrix.distro }}-${{ matrix.python }}
+        include:
+          # ---- coffea 0.7 ------------------------------------------------
+          - {image_dir: coffea-base, distro: almalinux8, base: "almalinux:8", python: "3.11", yaml: environment.yaml, nodak: "0", flavour: coffea-0.7, legacy: coffea-base}
+          - {image_dir: coffea-base, distro: almalinux9, base: "almalinux:9", python: "3.11", yaml: environment.yaml, nodak: "0", flavour: coffea-0.7, legacy: coffea-base}
+
+          # ---- calver, full env, has dask-awkward ------------------------
+          - {image_dir: coffea-dask, distro: almalinux8, base: "almalinux:8", python: "3.12", yaml: environment.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
+          - {image_dir: coffea-dask, distro: almalinux8, base: "almalinux:8", python: "3.13", yaml: environment.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
+          - {image_dir: coffea-dask, distro: almalinux9, base: "almalinux:9", python: "3.12", yaml: environment.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
+          - {image_dir: coffea-dask, distro: almalinux9, base: "almalinux:9", python: "3.13", yaml: environment.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
+
+          # ---- THE NEW IMAGE ---------------------------------------------
+          # Same full env as coffea-dak-almalinux9:py3.13, with dask-awkward
+          # stripped and the dask pin lifted. Like-for-like comparison against
+          # the row directly above -- unlike noml, it keeps pytorch/xgboost.
+          - {image_dir: coffea-dask, distro: almalinux9, base: "almalinux:9", python: "3.13", yaml: environment.yaml, nodak: "1", flavour: coffea, legacy: ""}
+
+          # ---- calver, noml: yaml already has no dask-awkward, no pin -----
+          - {image_dir: coffea-dask, distro: almalinux9-noml, base: "almalinux:9", python: "3.12", yaml: environment-noml.yaml, nodak: "0", flavour: coffea, legacy: coffea-dask}
+          - {image_dir: coffea-dask, distro: almalinux9-noml, base: "almalinux:9", python: "3.13", yaml: environment-noml.yaml, nodak: "0", flavour: coffea, legacy: coffea-dask}
+
+          # ---- calver, eaf -----------------------------------------------
+          # NOTE: environment-eaf.yaml lists dask-awkward but NOT dask-histogram,
+          # so hist.dask is unimportable there and test_dimu_mass_dask skips.
+          # Tracked separately; not this PR.
+          - {image_dir: coffea-dask, distro: almalinux9-eaf, base: "almalinux:9", python: "3.12", yaml: environment-eaf.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
+          - {image_dir: coffea-dask, distro: almalinux9-eaf, base: "almalinux:9", python: "3.13", yaml: environment-eaf.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
+    name: ${{ matrix.flavour }}-${{ matrix.distro }}-py${{ matrix.python }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -55,7 +79,7 @@ jobs:
         # this might remove tools that are actually needed,
         # if set to "true" but frees about 6 GB
         tool-cache: false
-          
+
         # all of these default to true, but feel free to set to
         # "false" if necessary for your workflow
         android: true
@@ -108,74 +132,104 @@ jobs:
     - name: Workaround to free up 5GB of space # see https://github.com/actions/runner-images/issues/709#issuecomment-612569242
       run: sudo rm -rf "/usr/local/share/boost" && sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
-    - name: Generate Docker and OSG tags 
+    - name: Generate Docker and OSG tags
       id: tags
       env:
         image_dir: ${{ matrix.image_dir }}
         python: ${{ matrix.python }}
         distro: ${{ matrix.distro }}
+        flavour: ${{ matrix.flavour }}
+        legacy_flavour: ${{ matrix.legacy }}
         releasev0: ${{ env.releasev0 }}
         release: ${{ env.release }}
-        python_latest: ${{ env.python_latest}}
+        python_latest: ${{ env.python_latest }}
+        python_latestv0: ${{ env.python_latestv0 }}
         stable: ${{ startsWith(github.ref, 'refs/tags') }}
         ref_branch: ${{ github.ref }}
-        registry: ${{ matrix.registry }}
+        registry: docker.io
+        push_legacy_aliases: ${{ env.push_legacy_aliases }}
       run: |
-        image="${registry}/coffeateam/${image_dir}-${distro}"
-        image_default="${registry}coffeateam/${image_dir}"
-        
-        # release tag or in case other case make it dev
-        if [ "$stable" == "true" ]; then
-          if [ ${image_dir} == 'coffea-base' ]; then
-            tag="${image}:${releasev0}-py${python}"
+        name="coffeateam/${flavour}-${distro}"
+        image="${registry}/${name}"      # e.g. docker.io/coffeateam/coffea-dak-almalinux9
+        osgimage="${name}"               # registry-less; Harbor prefix added at push time
+
+        # Pre-rename names, published as aliases of the same digest while
+        # push_legacy_aliases is true. No old name is reused for a different
+        # flavour, so an existing pull keeps resolving to identical contents.
+        legacy_image=""
+        legacy_osgimage=""
+        if [ "${push_legacy_aliases}" == "true" ] && [ -n "${legacy_flavour}" ]; then
+          legacy_name="coffeateam/${legacy_flavour}-${distro}"
+          legacy_image="${registry}/${legacy_name}"
+          legacy_osgimage="${legacy_name}"
+        fi
+
+        if [ "${stable}" == "true" ]; then
+          if [ "${image_dir}" == 'coffea-base' ]; then
+            version_tag="${releasev0}-py${python}"
           else
-            tag="${image}:${release}-py${python}"
+            version_tag="${release}-py${python}"
           fi
-          tags=${image}:latest-py${python},$tag
-          # latest tag
-          if [ ${python} == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
-            tags=${image}:latest,$tags
+          suffixes="${version_tag} latest-py${python}"
+          if [ "${python}" == "${python_latest}" ] || [ "${python}" == "${python_latestv0}" ]; then
+            suffixes="latest ${suffixes}"
+          fi
+        elif [ "${ref_branch}" == "refs/heads/main" ]; then
+          version_tag="head-py${python}"
+          suffixes="${version_tag}"
+          if [ "${python}" == "${python_latest}" ] || [ "${python}" == "${python_latestv0}" ]; then
+            suffixes="head ${suffixes}"
           fi
         else
-          if [ "$ref_branch" == "refs/heads/main" ]; then
-            tag="${image}:head-py${python}"
-            tags=$tag
-            if [ "$python" == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
-              tags=${image}:head,$tags
-            fi
-          else
-            tag="${image}:dev-py${python}"
-            tags=$tag
-            if [ "$python" == ${python_latest} ] || [ "$python" == ${python_latestv0} ]; then
-              tags=${image}:dev,$tags
-            fi
+          version_tag="dev-py${python}"
+          suffixes="${version_tag}"
+          if [ "${python}" == "${python_latest}" ] || [ "${python}" == "${python_latestv0}" ]; then
+            suffixes="dev ${suffixes}"
           fi
         fi
 
-        echo "::set-output name=tag::${tag}"
-        echo "::set-output name=tags::${tags}"
+        tag="${image}:${version_tag}"    # the single tag the test steps run against
 
-    - name: Build base v0
+        tags=""
+        osgtags=""
+        for s in ${suffixes}; do
+          tags="${tags}${tags:+,}${image}:${s}"
+          osgtags="${osgtags}${osgtags:+,}${osgimage}:${s}"
+          if [ -n "${legacy_image}" ]; then
+            tags="${tags},${legacy_image}:${s}"
+            osgtags="${osgtags},${legacy_osgimage}:${s}"
+          fi
+        done
+
+        echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+        echo "tags=${tags}" >> "$GITHUB_OUTPUT"
+        echo "osgtags=${osgtags}" >> "$GITHUB_OUTPUT"
+
+    - name: Build coffea-0.7
       if: ${{ matrix.image_dir == 'coffea-base' }}
       uses: docker/build-push-action@v6
       with:
         load: true
         tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
         context: ${{ matrix.image_dir }}
-        file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
+        file: ${{ matrix.image_dir }}/Dockerfile
         build-args: |
+          BASE_IMAGE=${{ matrix.base }}
           python=${{ matrix.python }}
           releasev0=${{ env.releasev0 }}
 
-    - name: Build base v1
+    - name: Build calver
       if: ${{ matrix.image_dir != 'coffea-base' }}
       uses: docker/build-push-action@v6
       with:
         load: true
         tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
         context: ${{ matrix.image_dir }}
-        file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
+        file: ${{ matrix.image_dir }}/Dockerfile
         build-args: |
+          BASE_IMAGE=${{ matrix.base }}
+          ENV_YAML=${{ matrix.yaml }}
+          NODAK=${{ matrix.nodak }}
           python=${{ matrix.python }}
           release=${{ env.release }}
 
@@ -184,6 +238,18 @@ jobs:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
         docker run --rm ${tag} conda list --export
+
+    # Before the tests, so it prints even when they fail. Diff this between
+    # coffea-dak-almalinux9:py3.13 and coffea-almalinux9:py3.13 -- that pair
+    # differs only in dask-awkward and the pin, and is the readout the new
+    # image exists to produce.
+    - name: Show resolved dask stack
+      if: ${{ matrix.image_dir != 'coffea-base' }}
+      env:
+        tag: ${{ steps.tags.outputs.tag }}
+      run: |
+        docker run --rm ${tag} \
+          conda list --export | grep -E '^(dask|dask-core|distributed|dask-awkward|dask-histogram|dask-jobqueue|dask-gateway)=' || true
 
     - name: Make sure voms tools are working
       env:
@@ -204,51 +270,64 @@ jobs:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
         docker run --rm -v ${{ github.workspace }}:/tmp/workspace ${tag} \
-        sh -c "pip install -U pytest && cd tmp/workspace && pytest -m v0"
+        sh -c "pip install -U pytest && cd tmp/workspace && pytest -m v0 -rs"
 
+    # -rs prints skip reasons, so images without dask-awkward show
+    # "skipped: image built without dask-awkward/dask-histogram" rather than
+    # looking like a test silently vanished.
     - name: Test Pytest environement CalVer
       if: ${{ matrix.image_dir != 'coffea-base' }}
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
         docker run --rm -v ${{ github.workspace }}:/tmp/workspace ${tag} \
-        sh -c "pip install -U pytest && cd tmp/workspace && pytest -m calver"
+        sh -c "pip install -U pytest && cd tmp/workspace && pytest -m calver -rs"
 
-    - name: Build and push v0
+    - name: Build and push calver
       if: ${{ matrix.image_dir != 'coffea-base' }}
       uses: docker/build-push-action@v6
       with:
         platforms: linux/amd64
-        push: ${{  github.event_name == 'push' }}
+        push: ${{ github.event_name == 'push' }}
         tags: ${{ steps.tags.outputs.tags }}
         context: ${{ matrix.image_dir }}
-        file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
+        file: ${{ matrix.image_dir }}/Dockerfile
         build-args: |
+          BASE_IMAGE=${{ matrix.base }}
+          ENV_YAML=${{ matrix.yaml }}
+          NODAK=${{ matrix.nodak }}
           python=${{ matrix.python }}
           release=${{ env.release }}
 
-    - name: Build and push v1
+    - name: Build and push coffea-0.7
       if: ${{ matrix.image_dir == 'coffea-base' }}
       uses: docker/build-push-action@v6
       with:
         platforms: linux/amd64
-        push: ${{  github.event_name == 'push' }}
+        push: ${{ github.event_name == 'push' }}
         tags: ${{ steps.tags.outputs.tags }}
         context: ${{ matrix.image_dir }}
-        file: ${{ matrix.image_dir }}/Dockerfile.${{ matrix.distro }}
+        file: ${{ matrix.image_dir }}/Dockerfile
         build-args: |
+          BASE_IMAGE=${{ matrix.base }}
           python=${{ matrix.python }}
           releasev0=${{ env.releasev0 }}
 
+    # All flavours go to Harbor. Each has a distinct repo name, so their
+    # latest/head/dev tags cannot shadow each other.
     - name: Push to Harbor Hub
       if: ${{ github.event_name == 'push' }}
       env:
         TAGS: ${{ steps.tags.outputs.osgtags }}
       run: |
-        for tag in $(echo $TAGS | tr ',' ' '); do
+        set -euo pipefail
+        if [ -z "${TAGS}" ]; then
+          echo "No OSG tags generated; nothing to push." >&2
+          exit 1
+        fi
+        for tag in $(echo "${TAGS}" | tr ',' ' '); do
           harbor_tag="hub.opensciencegrid.org/${tag}"
-            echo "Tagging $tag -> $harbor_tag"
-            docker tag $tag $harbor_tag
-            docker push $harbor_tag
-          done
-
+          echo "Tagging ${tag} -> ${harbor_tag}"
+          docker tag "${tag}" "${harbor_tag}"
+          docker push "${harbor_tag}"
+        done
