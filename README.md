@@ -78,4 +78,4 @@ image, so nothing you already pull can silently change underneath you.
 Images are published to:
 
 - Docker Hub: `coffeateam/<image>`
-- OSG Harbor: `hub.opensciencegrid.org/coffeateam/<image>`
+- OSG Harbor: `hub.opensciencegrid.org/coffea-casa/<image>`
