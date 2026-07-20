@@ -11,6 +11,9 @@ on:
 
 env:
   DOCKER_ORG: coffeateam
+  # Harbor project on hub.opensciencegrid.org. Docker Hub/GHCR stay on
+  # coffeateam; only the OSG/Harbor image names use this.
+  HARBOR_PROJECT: coffea-casa
   GITHUB_SHA: ${{ github.sha }}
   GITHUB_REF: ${{ github.ref }}
   # Update each time there is added latest python: it will be used for `latest` tag
@@ -147,11 +150,12 @@ jobs:
         stable: ${{ startsWith(github.ref, 'refs/tags') }}
         ref_branch: ${{ github.ref }}
         registry: docker.io
+        harbor_project: ${{ env.HARBOR_PROJECT }}
         push_legacy_aliases: ${{ env.push_legacy_aliases }}
       run: |
         name="coffeateam/${flavour}-${distro}"
-        image="${registry}/${name}"      # e.g. docker.io/coffeateam/coffea-dak-almalinux9
-        osgimage="${name}"               # registry-less; Harbor prefix added at push time
+        image="${registry}/${name}"                        # docker.io/coffeateam/...  (Docker Hub, unchanged)
+        osgimage="${harbor_project}/${flavour}-${distro}"  # coffea-casa/... ; Harbor prefix added at push time
 
         # Pre-rename names, published as aliases of the same digest while
         # push_legacy_aliases is true. No old name is reused for a different
@@ -161,7 +165,7 @@ jobs:
         if [ "${push_legacy_aliases}" == "true" ] && [ -n "${legacy_flavour}" ]; then
           legacy_name="coffeateam/${legacy_flavour}-${distro}"
           legacy_image="${registry}/${legacy_name}"
-          legacy_osgimage="${legacy_name}"
+          legacy_osgimage="${harbor_project}/${legacy_flavour}-${distro}"
         fi
 
         if [ "${stable}" == "true" ]; then
