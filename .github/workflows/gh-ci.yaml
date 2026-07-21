@@ -59,7 +59,7 @@ jobs:
           # stripped and the dask pin lifted. Like-for-like comparison against
           # the row directly above -- unlike noml, it keeps pytorch/xgboost.
           - {image_dir: coffea-dask, distro: almalinux9, base: "almalinux:9", python: "3.13", yaml: environment.yaml, nodak: "1", flavour: coffea, legacy: ""}
-
+          - {image_dir: coffea-dask, distro: almalinux9, base: "almalinux:9", python: "3.12", yaml: environment.yaml, nodak: "1", flavour: coffea, legacy: ""}
           # ---- calver, noml: yaml already has no dask-awkward, no pin -----
           - {image_dir: coffea-dask, distro: almalinux9-noml, base: "almalinux:9", python: "3.12", yaml: environment-noml.yaml, nodak: "0", flavour: coffea, legacy: coffea-dask}
           - {image_dir: coffea-dask, distro: almalinux9-noml, base: "almalinux:9", python: "3.13", yaml: environment-noml.yaml, nodak: "0", flavour: coffea, legacy: coffea-dask}
