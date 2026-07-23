@@ -9,7 +9,6 @@ dependencies:
   - xrootd
   - htcondor
   - curl
-  - coffea-workflow
     # jupyter-related
   - jupyterlab
   - ipympl
