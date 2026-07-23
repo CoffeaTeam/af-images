@@ -48,3 +48,5 @@ dependencies:
   - fastjet
   - coffea=2026.7.0
   - fsspec-xrootd
+  - pip:
+    - coffea-workflow
