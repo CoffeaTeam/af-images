@@ -9,7 +9,6 @@ dependencies:
   - xrootd
   - htcondor
   - curl
-  - coffea-workflow
     # jupyter-related
   - jupyterlab
   - ipympl
@@ -58,3 +57,4 @@ dependencies:
   - fsspec-xrootd
   - pip:
     - tritonclient[grpc,http]
+    - coffea-workflow
