@@ -30,7 +30,60 @@ env:
 
 jobs:
 
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      build_base: ${{ steps.decide.outputs.build_base }}
+      build_dask: ${{ steps.decide.outputs.build_dask }}
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    # Skipped on tag pushes: a new tag's "before" SHA is often all-zeros
+    # (nothing to diff against), and we build everything on a tag anyway.
+    - name: Detect changed image directories
+      id: filter
+      if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+      uses: dorny/paths-filter@v3
+      with:
+        filters: |
+          coffea-base:
+            - 'coffea-base/**'
+          coffea-dask:
+            - 'coffea-dask/**'
+          workflow:
+            - '.github/workflows/gh-ci.yaml'
+
+    # Touching coffea-base shouldn't also rebuild every coffea-dask flavour
+    # and vice versa. Tag pushes (releases) and changes to this workflow
+    # file itself always build both, since those need full coverage.
+    - name: Decide which images to build
+      id: decide
+      env:
+        base_changed: ${{ steps.filter.outputs.coffea-base }}
+        dask_changed: ${{ steps.filter.outputs.coffea-dask }}
+        workflow_changed: ${{ steps.filter.outputs.workflow }}
+        is_tag: ${{ startsWith(github.ref, 'refs/tags/') }}
+      run: |
+        build_base=false
+        build_dask=false
+        if [ "${is_tag}" == "true" ] || [ "${workflow_changed}" == "true" ]; then
+          build_base=true
+          build_dask=true
+        else
+          [ "${base_changed}" == "true" ] && build_base=true
+          [ "${dask_changed}" == "true" ] && build_dask=true
+        fi
+        echo "build_base=${build_base}" >> "$GITHUB_OUTPUT"
+        echo "build_dask=${build_dask}" >> "$GITHUB_OUTPUT"
+
   matrix-build:
+    needs: changes
+    if: |
+      (matrix.image_dir == 'coffea-base' && needs.changes.outputs.build_base == 'true') ||
+      (matrix.image_dir != 'coffea-base' && needs.changes.outputs.build_dask == 'true')
     strategy:
       fail-fast: false
       # Explicit list rather than a product. `dask-awkward or not` is a property
