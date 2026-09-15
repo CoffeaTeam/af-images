@@ -18,7 +18,11 @@ dependencies:
   - dask<2025.4.0
   - dask-awkward
   - dask-histogram
-  - bokeh
+    # bokeh>=3.7 made Client()/scheduler shutdown call an async-only stop()
+    # path that the distributed pulled in by the dask pin above doesn't use,
+    # raising "Cannot synchronously wait on a running event loop" on close
+    # (fixed upstream in dask/distributed#9026, not in our pinned range).
+  - bokeh<3.7
   # Add workqueue
   - ndcctools
     # core scipy

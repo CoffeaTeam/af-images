@@ -17,7 +17,7 @@ FROM ${BASE_IMAGE}
 ARG BASE_IMAGE
 ARG python
 ARG release
-ARG TARGETPLATFORM
+ARG TARGETARCH
 ARG ENV_YAML=environment.yaml
 ARG NODAK=0
 
@@ -48,7 +48,15 @@ RUN test -f "/tmp/env/${ENV_YAML}" \
 #
 # NODAK derives its env by filtering rather than from a second yaml, because
 # `mamba env update` can only add packages, never remove them.
+# CONDA_OVERRIDE_ARCHSPEC pins the solve to the generic baseline microarch
+# for TARGETARCH, so mamba doesn't pick a package build optimized for the
+# build host's CPU (e.g. x86_64_v3) that then SIGILLs on other hardware.
 RUN export G_SLICE=always-malloc \
+    && case "${TARGETARCH}" in \
+         amd64) archspec=x86_64 ;; \
+         arm64) archspec=aarch64 ;; \
+         *) echo "Unsupported TARGETARCH=${TARGETARCH}"; exit 1 ;; \
+       esac \
     && mamba install -y \
         python=${PYTHON_VERSION} \
     && if [ "$NODAK" = "1" ]; then \
@@ -79,7 +87,7 @@ RUN export G_SLICE=always-malloc \
     && echo "=== declared dask-awkward capability: $(cat /etc/af_dask_awkward)" \
     && echo "=== dask specs:" \
     && grep -nE '^[[:space:]]*-[[:space:]]*dask' ${ENV_FILE} \
-    && CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba env update --file ${ENV_FILE} \
+    && CONDA_OVERRIDE_ARCHSPEC=${archspec} mamba env update --file ${ENV_FILE} \
     && rm -f /env-nodak.yaml \
     && rm -rf /tmp/env \
     && mamba clean -tipy \
