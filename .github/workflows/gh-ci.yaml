@@ -155,7 +155,7 @@ jobs:
       run: |
         name="coffeateam/${flavour}-${distro}"
         image="${registry}/${name}"                        # docker.io/coffeateam/...  (Docker Hub, unchanged)
-        osgimage="${harbor_project}/${flavour}-${distro}"  # coffea-casa/... ; Harbor prefix added at push time
+        osgimage="hub.opensciencegrid.org/${harbor_project}/${flavour}-${distro}"
 
         # Pre-rename names, published as aliases of the same digest while
         # push_legacy_aliases is true. No old name is reused for a different
@@ -287,13 +287,18 @@ jobs:
         docker run --rm -v ${{ github.workspace }}:/tmp/workspace ${tag} \
         sh -c "pip install -U pytest && cd tmp/workspace && pytest -m calver -rs"
 
+    # platforms covers both amd64 and arm64; push covers both Docker
+    # Hub/GHCR and Harbor tags in a single multi-arch manifest so neither
+    # registry ends up amd64-only. (A separate `docker tag`/`docker push`
+    # of a locally loaded image -- the old approach for Harbor -- can only
+    # ever carry the single native arch that `docker load` produces.)
     - name: Build and push calver
       if: ${{ matrix.image_dir != 'coffea-base' }}
       uses: docker/build-push-action@v6
       with:
-        platforms: linux/amd64
+        platforms: linux/amd64,linux/arm64
         push: ${{ github.event_name == 'push' }}
-        tags: ${{ steps.tags.outputs.tags }}
+        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile
         build-args: |
@@ -307,31 +312,12 @@ jobs:
       if: ${{ matrix.image_dir == 'coffea-base' }}
       uses: docker/build-push-action@v6
       with:
-        platforms: linux/amd64
+        platforms: linux/amd64,linux/arm64
         push: ${{ github.event_name == 'push' }}
-        tags: ${{ steps.tags.outputs.tags }}
+        tags: ${{ steps.tags.outputs.tags }},${{ steps.tags.outputs.osgtags }}
         context: ${{ matrix.image_dir }}
         file: ${{ matrix.image_dir }}/Dockerfile
         build-args: |
           BASE_IMAGE=${{ matrix.base }}
           python=${{ matrix.python }}
           releasev0=${{ env.releasev0 }}
-
-    # All flavours go to Harbor. Each has a distinct repo name, so their
-    # latest/head/dev tags cannot shadow each other.
-    - name: Push to Harbor Hub
-      if: ${{ github.event_name == 'push' }}
-      env:
-        TAGS: ${{ steps.tags.outputs.osgtags }}
-      run: |
-        set -euo pipefail
-        if [ -z "${TAGS}" ]; then
-          echo "No OSG tags generated; nothing to push." >&2
-          exit 1
-        fi
-        for tag in $(echo "${TAGS}" | tr ',' ' '); do
-          harbor_tag="hub.opensciencegrid.org/${tag}"
-          echo "Tagging ${tag} -> ${harbor_tag}"
-          docker tag "${tag}" "${harbor_tag}"
-          docker push "${harbor_tag}"
-        done

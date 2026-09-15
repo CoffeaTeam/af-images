@@ -4,7 +4,7 @@ FROM ${BASE_IMAGE}
 
 ARG python
 ARG releasev0
-ARG TARGETPLATFORM
+ARG TARGETARCH
 
 ENV PYTHON_VERSION=${python}
 
@@ -25,9 +25,17 @@ RUN wget "https://github.com/conda-forge/miniforge/releases/download/24.11.3-2/M
 
 COPY  environment.yaml /
 
+# CONDA_OVERRIDE_ARCHSPEC pins the solve to the generic baseline microarch
+# for TARGETARCH, so mamba doesn't pick a package build optimized for the
+# build host's CPU (e.g. x86_64_v3) that then SIGILLs on other hardware.
 RUN export G_SLICE=always-malloc \
+    && case "${TARGETARCH}" in \
+         amd64) archspec=x86_64 ;; \
+         arm64) archspec=aarch64 ;; \
+         *) echo "Unsupported TARGETARCH=${TARGETARCH}"; exit 1 ;; \
+       esac \
     && mamba install -y python=${PYTHON_VERSION} \
-    && CONDA_OVERRIDE_ARCHSPEC=x86_64 mamba env update --file /environment.yaml \
+    && CONDA_OVERRIDE_ARCHSPEC=${archspec} mamba env update --file /environment.yaml \
     && mamba clean -tipy \
     && find /usr/local -type f -name '*.a' -delete \
     && find /usr/local -type f -name '*.pyc' -delete \
