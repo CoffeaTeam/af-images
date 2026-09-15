@@ -9,11 +9,13 @@ ARG TARGETARCH
 ENV PYTHON_VERSION=${python}
 
 # Install dependencies for Miniforge
-# patch: the pip fastjet==3.4.0.1 sdist build (no prebuilt wheel on
-# linux-aarch64) runs `patch` against the vendored FastJet C++ source.
+# patch/autoconf/automake/libtool: the pip fastjet==3.4.0.1 sdist build (no
+# prebuilt wheel on linux-aarch64) patches the vendored FastJet C++ source
+# and then configures/builds it via autogen.sh, which needs all four.
 RUN dnf install -y epel-release && \
     dnf update -y && \
-    dnf install -y wget bzip2 ca-certificates git wget libgfortran which zsh emacs vim htop man man-pages patch && \
+    dnf install -y wget bzip2 ca-certificates git wget libgfortran which zsh emacs vim htop man man-pages \
+        patch autoconf automake libtool && \
     dnf clean all
 
 # Download and install Miniforge
