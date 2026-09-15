@@ -37,6 +37,7 @@ jobs:
     outputs:
       build_base: ${{ steps.decide.outputs.build_base }}
       build_dask: ${{ steps.decide.outputs.build_dask }}
+      matrix: ${{ steps.decide.outputs.matrix }}
     steps:
     - name: Check out code
       uses: actions/checkout@v4
@@ -59,6 +60,11 @@ jobs:
     # -- a PR/branch that happens to touch this workflow file too (as when
     # this scoping itself is being developed) still only builds the image
     # directory it actually changed, so iterating stays fast.
+    #
+    # This is the single source of truth for the matrix (matrix-build below
+    # just consumes it via fromJson): a per-step `if:` can skip a matrix
+    # leg's work, but the job entry itself still shows up in the Actions UI
+    # unless the excluded combinations are never in the matrix to begin with.
     - name: Decide which images to build
       id: decide
       env:
@@ -78,73 +84,52 @@ jobs:
         echo "build_base=${build_base}" >> "$GITHUB_OUTPUT"
         echo "build_dask=${build_dask}" >> "$GITHUB_OUTPUT"
 
+        # ---- coffea 0.7 --------------------------------------------------
+        base_matrix='[
+          {"image_dir":"coffea-base","distro":"almalinux8","base":"almalinux:8","python":"3.11","yaml":"environment.yaml","nodak":"0","flavour":"coffea-0.7","legacy":"coffea-base"},
+          {"image_dir":"coffea-base","distro":"almalinux9","base":"almalinux:9","python":"3.11","yaml":"environment.yaml","nodak":"0","flavour":"coffea-0.7","legacy":"coffea-base"}
+        ]'
+
+        # flavour -> published image name (${flavour}-${distro}):
+        #   coffea-dak  calver, has dask-awkward ("dak" is the import alias)
+        #   coffea      calver, no dask-awkward, no dask upper pin
+        # Explicit list rather than a product: `dask-awkward or not` is a
+        # property of each environment yaml, not a free axis --
+        # environment-noml.yaml has no dask-awkward and no dask pin, so a
+        # product over distro x with/without generates combinations that
+        # cannot exist.
+        dask_matrix='[
+          {"image_dir":"coffea-dask","distro":"almalinux8","base":"almalinux:8","python":"3.12","yaml":"environment.yaml","nodak":"0","flavour":"coffea-dak","legacy":"coffea-dask"},
+          {"image_dir":"coffea-dask","distro":"almalinux8","base":"almalinux:8","python":"3.13","yaml":"environment.yaml","nodak":"0","flavour":"coffea-dak","legacy":"coffea-dask"},
+          {"image_dir":"coffea-dask","distro":"almalinux9","base":"almalinux:9","python":"3.12","yaml":"environment.yaml","nodak":"0","flavour":"coffea-dak","legacy":"coffea-dask"},
+          {"image_dir":"coffea-dask","distro":"almalinux9","base":"almalinux:9","python":"3.13","yaml":"environment.yaml","nodak":"0","flavour":"coffea-dak","legacy":"coffea-dask"},
+          {"image_dir":"coffea-dask","distro":"almalinux9","base":"almalinux:9","python":"3.13","yaml":"environment.yaml","nodak":"1","flavour":"coffea","legacy":""},
+          {"image_dir":"coffea-dask","distro":"almalinux9","base":"almalinux:9","python":"3.12","yaml":"environment.yaml","nodak":"1","flavour":"coffea","legacy":""},
+          {"image_dir":"coffea-dask","distro":"almalinux9-noml","base":"almalinux:9","python":"3.12","yaml":"environment-noml.yaml","nodak":"0","flavour":"coffea","legacy":"coffea-dask"},
+          {"image_dir":"coffea-dask","distro":"almalinux9-noml","base":"almalinux:9","python":"3.13","yaml":"environment-noml.yaml","nodak":"0","flavour":"coffea","legacy":"coffea-dask"},
+          {"image_dir":"coffea-dask","distro":"almalinux9-eaf","base":"almalinux:9","python":"3.12","yaml":"environment-eaf.yaml","nodak":"0","flavour":"coffea-dak","legacy":"coffea-dask"},
+          {"image_dir":"coffea-dask","distro":"almalinux9-eaf","base":"almalinux:9","python":"3.13","yaml":"environment-eaf.yaml","nodak":"0","flavour":"coffea-dak","legacy":"coffea-dask"}
+        ]'
+
+        matrix="[]"
+        [ "${build_base}" == "true" ] && matrix=$(jq -c --argjson a "${matrix}" --argjson b "${base_matrix}" -n '$a + $b')
+        [ "${build_dask}" == "true" ] && matrix=$(jq -c --argjson a "${matrix}" --argjson b "${dask_matrix}" -n '$a + $b')
+        echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+
   matrix-build:
     needs: changes
+    if: ${{ needs.changes.outputs.build_base == 'true' || needs.changes.outputs.build_dask == 'true' }}
     strategy:
       fail-fast: false
-      # Explicit list rather than a product. `dask-awkward or not` is a property
-      # of each environment yaml, not a free axis: environment-noml.yaml has no
-      # dask-awkward and no dask pin, so a product over distro x with/without
-      # generates combinations that cannot exist.
-      #
-      # flavour -> published image name (${flavour}-${distro}):
-      #   coffea-0.7   coffea 0.7.31
-      #   coffea-dak   calver, has dask-awkward ("dak" is the import alias)
-      #   coffea       calver, no dask-awkward, no dask upper pin
       matrix:
-        include:
-          # ---- coffea 0.7 ------------------------------------------------
-          - {image_dir: coffea-base, distro: almalinux8, base: "almalinux:8", python: "3.11", yaml: environment.yaml, nodak: "0", flavour: coffea-0.7, legacy: coffea-base}
-          - {image_dir: coffea-base, distro: almalinux9, base: "almalinux:9", python: "3.11", yaml: environment.yaml, nodak: "0", flavour: coffea-0.7, legacy: coffea-base}
-
-          # ---- calver, full env, has dask-awkward ------------------------
-          - {image_dir: coffea-dask, distro: almalinux8, base: "almalinux:8", python: "3.12", yaml: environment.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
-          - {image_dir: coffea-dask, distro: almalinux8, base: "almalinux:8", python: "3.13", yaml: environment.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
-          - {image_dir: coffea-dask, distro: almalinux9, base: "almalinux:9", python: "3.12", yaml: environment.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
-          - {image_dir: coffea-dask, distro: almalinux9, base: "almalinux:9", python: "3.13", yaml: environment.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
-
-          # ---- THE NEW IMAGE ---------------------------------------------
-          # Same full env as coffea-dak-almalinux9:py3.13, with dask-awkward
-          # stripped and the dask pin lifted. Like-for-like comparison against
-          # the row directly above -- unlike noml, it keeps pytorch/xgboost.
-          - {image_dir: coffea-dask, distro: almalinux9, base: "almalinux:9", python: "3.13", yaml: environment.yaml, nodak: "1", flavour: coffea, legacy: ""}
-          - {image_dir: coffea-dask, distro: almalinux9, base: "almalinux:9", python: "3.12", yaml: environment.yaml, nodak: "1", flavour: coffea, legacy: ""}
-          # ---- calver, noml: yaml already has no dask-awkward, no pin -----
-          - {image_dir: coffea-dask, distro: almalinux9-noml, base: "almalinux:9", python: "3.12", yaml: environment-noml.yaml, nodak: "0", flavour: coffea, legacy: coffea-dask}
-          - {image_dir: coffea-dask, distro: almalinux9-noml, base: "almalinux:9", python: "3.13", yaml: environment-noml.yaml, nodak: "0", flavour: coffea, legacy: coffea-dask}
-
-          # ---- calver, eaf -----------------------------------------------
-          # NOTE: environment-eaf.yaml lists dask-awkward but NOT dask-histogram,
-          # so hist.dask is unimportable there and test_dimu_mass_dask skips.
-          # Tracked separately; not this PR.
-          - {image_dir: coffea-dask, distro: almalinux9-eaf, base: "almalinux:9", python: "3.12", yaml: environment-eaf.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
-          - {image_dir: coffea-dask, distro: almalinux9-eaf, base: "almalinux:9", python: "3.13", yaml: environment-eaf.yaml, nodak: "0", flavour: coffea-dak, legacy: coffea-dask}
+        include: ${{ fromJson(needs.changes.outputs.matrix) }}
     name: ${{ matrix.flavour }}-${{ matrix.distro }}-py${{ matrix.python }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
-    # Job-level `if:` can't see the `matrix` context, so the changes-job
-    # decision is applied here instead, and every following step guards on
-    # steps.gate.outputs.run -- that's what actually skips a whole flavour's
-    # disk cleanup/build/test/push when its image directory didn't change.
-    - name: Determine whether this matrix leg should build
-      id: gate
-      env:
-        image_dir: ${{ matrix.image_dir }}
-        build_base: ${{ needs.changes.outputs.build_base }}
-        build_dask: ${{ needs.changes.outputs.build_dask }}
-      run: |
-        if [ "${image_dir}" == "coffea-base" ]; then
-          run="${build_base}"
-        else
-          run="${build_dask}"
-        fi
-        echo "run=${run}" >> "$GITHUB_OUTPUT"
-
     - name: Free Disk Space (Ubuntu)
-      if: steps.gate.outputs.run == 'true'
       uses: jlumbroso/free-disk-space@main
       with:
         # this might remove tools that are actually needed,
@@ -161,15 +146,12 @@ jobs:
         swap-storage: true
 
     - name: Check out code
-      if: steps.gate.outputs.run == 'true'
       uses: actions/checkout@v4
 
     - name: Set up QEMU
-      if: steps.gate.outputs.run == 'true'
       uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
-      if: steps.gate.outputs.run == 'true'
       uses: docker/setup-docker-action@v4
       with:
         daemon-config: |
@@ -182,21 +164,21 @@ jobs:
 
     - name: Login to DockerHub
       uses: docker/login-action@v1
-      if: steps.gate.outputs.run == 'true' && github.event_name == 'push'
+      if: github.event_name == 'push'
       with:
         username: ${{ secrets.DOCKERHUB_ACCOUNT }}
         password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
 
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v1
-      if: steps.gate.outputs.run == 'true' && github.event_name == 'push'
+      if: github.event_name == 'push'
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Login to Harbor Hub
-      if: steps.gate.outputs.run == 'true' && success() && github.event_name != 'pull_request'
+      if: success() && github.event_name != 'pull_request'
       uses: docker/login-action@v2
       with:
         registry: hub.opensciencegrid.org
@@ -204,11 +186,9 @@ jobs:
         password: ${{ secrets.HARBOR_PASSWORD }}
 
     - name: Workaround to free up 5GB of space # see https://github.com/actions/runner-images/issues/709#issuecomment-612569242
-      if: steps.gate.outputs.run == 'true'
       run: sudo rm -rf "/usr/local/share/boost" && sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
     - name: Generate Docker and OSG tags
-      if: steps.gate.outputs.run == 'true'
       id: tags
       env:
         image_dir: ${{ matrix.image_dir }}
@@ -283,7 +263,7 @@ jobs:
         echo "osgtags=${osgtags}" >> "$GITHUB_OUTPUT"
 
     - name: Build coffea-0.7
-      if: steps.gate.outputs.run == 'true' && matrix.image_dir == 'coffea-base'
+      if: ${{ matrix.image_dir == 'coffea-base' }}
       uses: docker/build-push-action@v6
       with:
         load: true
@@ -296,7 +276,7 @@ jobs:
           releasev0=${{ env.releasev0 }}
 
     - name: Build calver
-      if: steps.gate.outputs.run == 'true' && matrix.image_dir != 'coffea-base'
+      if: ${{ matrix.image_dir != 'coffea-base' }}
       uses: docker/build-push-action@v6
       with:
         load: true
@@ -311,7 +291,6 @@ jobs:
           release=${{ env.release }}
 
     - name: Test Conda environement
-      if: steps.gate.outputs.run == 'true'
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
@@ -322,7 +301,7 @@ jobs:
     # differs only in dask-awkward and the pin, and is the readout the new
     # image exists to produce.
     - name: Show resolved dask stack
-      if: steps.gate.outputs.run == 'true' && matrix.image_dir != 'coffea-base'
+      if: ${{ matrix.image_dir != 'coffea-base' }}
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
@@ -330,7 +309,6 @@ jobs:
           conda list --export | grep -E '^(dask|dask-core|distributed|dask-awkward|dask-histogram|dask-jobqueue|dask-gateway)=' || true
 
     - name: Make sure voms tools are working
-      if: steps.gate.outputs.run == 'true'
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
@@ -344,7 +322,7 @@ jobs:
         fi
 
     - name: Test Pytest environement v0
-      if: steps.gate.outputs.run == 'true' && matrix.image_dir == 'coffea-base'
+      if: ${{ matrix.image_dir == 'coffea-base' }}
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
@@ -355,7 +333,7 @@ jobs:
     # "skipped: image built without dask-awkward/dask-histogram" rather than
     # looking like a test silently vanished.
     - name: Test Pytest environement CalVer
-      if: steps.gate.outputs.run == 'true' && matrix.image_dir != 'coffea-base'
+      if: ${{ matrix.image_dir != 'coffea-base' }}
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
@@ -368,7 +346,7 @@ jobs:
     # of a locally loaded image -- the old approach for Harbor -- can only
     # ever carry the single native arch that `docker load` produces.)
     - name: Build and push calver
-      if: steps.gate.outputs.run == 'true' && matrix.image_dir != 'coffea-base'
+      if: ${{ matrix.image_dir != 'coffea-base' }}
       uses: docker/build-push-action@v6
       with:
         platforms: linux/amd64,linux/arm64
@@ -384,7 +362,7 @@ jobs:
           release=${{ env.release }}
 
     - name: Build and push coffea-0.7
-      if: steps.gate.outputs.run == 'true' && matrix.image_dir == 'coffea-base'
+      if: ${{ matrix.image_dir == 'coffea-base' }}
       uses: docker/build-push-action@v6
       with:
         platforms: linux/amd64,linux/arm64
