@@ -19,7 +19,11 @@ dependencies:
   - dask-expr
    # To be reverted: Dask needs to be pinned for now, do not use dask>=2024.12.0 with coffea, dask-awkward, or uproot
   - dask<2025.4.0
-  - bokeh
+    # bokeh>=3.7 made Client()/scheduler shutdown call an async-only stop()
+    # path that the distributed pulled in by the dask pin above doesn't use,
+    # raising "Cannot synchronously wait on a running event loop" on close
+    # (fixed upstream in dask/distributed#9026, not in our pinned range).
+  - bokeh<3.7
   # Add workqueue
   - ndcctools
     # core scipy
