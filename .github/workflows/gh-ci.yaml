@@ -53,23 +53,22 @@ jobs:
             - 'coffea-base/**'
           coffea-dask:
             - 'coffea-dask/**'
-          workflow:
-            - '.github/workflows/gh-ci.yaml'
 
     # Touching coffea-base shouldn't also rebuild every coffea-dask flavour
-    # and vice versa. Tag pushes (releases) and changes to this workflow
-    # file itself always build both, since those need full coverage.
+    # and vice versa. Only tag pushes (releases) build both unconditionally
+    # -- a PR/branch that happens to touch this workflow file too (as when
+    # this scoping itself is being developed) still only builds the image
+    # directory it actually changed, so iterating stays fast.
     - name: Decide which images to build
       id: decide
       env:
         base_changed: ${{ steps.filter.outputs.coffea-base }}
         dask_changed: ${{ steps.filter.outputs.coffea-dask }}
-        workflow_changed: ${{ steps.filter.outputs.workflow }}
         is_tag: ${{ startsWith(github.ref, 'refs/tags/') }}
       run: |
         build_base=false
         build_dask=false
-        if [ "${is_tag}" == "true" ] || [ "${workflow_changed}" == "true" ]; then
+        if [ "${is_tag}" == "true" ]; then
           build_base=true
           build_dask=true
         else
