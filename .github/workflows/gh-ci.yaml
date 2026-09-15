@@ -81,9 +81,6 @@ jobs:
 
   matrix-build:
     needs: changes
-    if: |
-      (matrix.image_dir == 'coffea-base' && needs.changes.outputs.build_base == 'true') ||
-      (matrix.image_dir != 'coffea-base' && needs.changes.outputs.build_dask == 'true')
     strategy:
       fail-fast: false
       # Explicit list rather than a product. `dask-awkward or not` is a property
@@ -129,7 +126,26 @@ jobs:
       contents: read
       packages: write
     steps:
+    # Job-level `if:` can't see the `matrix` context, so the changes-job
+    # decision is applied here instead, and every following step guards on
+    # steps.gate.outputs.run -- that's what actually skips a whole flavour's
+    # disk cleanup/build/test/push when its image directory didn't change.
+    - name: Determine whether this matrix leg should build
+      id: gate
+      env:
+        image_dir: ${{ matrix.image_dir }}
+        build_base: ${{ needs.changes.outputs.build_base }}
+        build_dask: ${{ needs.changes.outputs.build_dask }}
+      run: |
+        if [ "${image_dir}" == "coffea-base" ]; then
+          run="${build_base}"
+        else
+          run="${build_dask}"
+        fi
+        echo "run=${run}" >> "$GITHUB_OUTPUT"
+
     - name: Free Disk Space (Ubuntu)
+      if: steps.gate.outputs.run == 'true'
       uses: jlumbroso/free-disk-space@main
       with:
         # this might remove tools that are actually needed,
@@ -146,12 +162,15 @@ jobs:
         swap-storage: true
 
     - name: Check out code
+      if: steps.gate.outputs.run == 'true'
       uses: actions/checkout@v4
 
     - name: Set up QEMU
+      if: steps.gate.outputs.run == 'true'
       uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
+      if: steps.gate.outputs.run == 'true'
       uses: docker/setup-docker-action@v4
       with:
         daemon-config: |
@@ -164,21 +183,21 @@ jobs:
 
     - name: Login to DockerHub
       uses: docker/login-action@v1
-      if: github.event_name == 'push'
+      if: steps.gate.outputs.run == 'true' && github.event_name == 'push'
       with:
         username: ${{ secrets.DOCKERHUB_ACCOUNT }}
         password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
 
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v1
-      if: github.event_name == 'push'
+      if: steps.gate.outputs.run == 'true' && github.event_name == 'push'
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Login to Harbor Hub
-      if: success() && github.event_name != 'pull_request'
+      if: steps.gate.outputs.run == 'true' && success() && github.event_name != 'pull_request'
       uses: docker/login-action@v2
       with:
         registry: hub.opensciencegrid.org
@@ -186,9 +205,11 @@ jobs:
         password: ${{ secrets.HARBOR_PASSWORD }}
 
     - name: Workaround to free up 5GB of space # see https://github.com/actions/runner-images/issues/709#issuecomment-612569242
+      if: steps.gate.outputs.run == 'true'
       run: sudo rm -rf "/usr/local/share/boost" && sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
     - name: Generate Docker and OSG tags
+      if: steps.gate.outputs.run == 'true'
       id: tags
       env:
         image_dir: ${{ matrix.image_dir }}
@@ -263,7 +284,7 @@ jobs:
         echo "osgtags=${osgtags}" >> "$GITHUB_OUTPUT"
 
     - name: Build coffea-0.7
-      if: ${{ matrix.image_dir == 'coffea-base' }}
+      if: steps.gate.outputs.run == 'true' && matrix.image_dir == 'coffea-base'
       uses: docker/build-push-action@v6
       with:
         load: true
@@ -276,7 +297,7 @@ jobs:
           releasev0=${{ env.releasev0 }}
 
     - name: Build calver
-      if: ${{ matrix.image_dir != 'coffea-base' }}
+      if: steps.gate.outputs.run == 'true' && matrix.image_dir != 'coffea-base'
       uses: docker/build-push-action@v6
       with:
         load: true
@@ -291,6 +312,7 @@ jobs:
           release=${{ env.release }}
 
     - name: Test Conda environement
+      if: steps.gate.outputs.run == 'true'
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
@@ -301,7 +323,7 @@ jobs:
     # differs only in dask-awkward and the pin, and is the readout the new
     # image exists to produce.
     - name: Show resolved dask stack
-      if: ${{ matrix.image_dir != 'coffea-base' }}
+      if: steps.gate.outputs.run == 'true' && matrix.image_dir != 'coffea-base'
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
@@ -309,6 +331,7 @@ jobs:
           conda list --export | grep -E '^(dask|dask-core|distributed|dask-awkward|dask-histogram|dask-jobqueue|dask-gateway)=' || true
 
     - name: Make sure voms tools are working
+      if: steps.gate.outputs.run == 'true'
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
@@ -322,7 +345,7 @@ jobs:
         fi
 
     - name: Test Pytest environement v0
-      if: ${{ matrix.image_dir == 'coffea-base' }}
+      if: steps.gate.outputs.run == 'true' && matrix.image_dir == 'coffea-base'
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
@@ -333,7 +356,7 @@ jobs:
     # "skipped: image built without dask-awkward/dask-histogram" rather than
     # looking like a test silently vanished.
     - name: Test Pytest environement CalVer
-      if: ${{ matrix.image_dir != 'coffea-base' }}
+      if: steps.gate.outputs.run == 'true' && matrix.image_dir != 'coffea-base'
       env:
         tag: ${{ steps.tags.outputs.tag }}
       run: |
@@ -346,7 +369,7 @@ jobs:
     # of a locally loaded image -- the old approach for Harbor -- can only
     # ever carry the single native arch that `docker load` produces.)
     - name: Build and push calver
-      if: ${{ matrix.image_dir != 'coffea-base' }}
+      if: steps.gate.outputs.run == 'true' && matrix.image_dir != 'coffea-base'
       uses: docker/build-push-action@v6
       with:
         platforms: linux/amd64,linux/arm64
@@ -362,7 +385,7 @@ jobs:
           release=${{ env.release }}
 
     - name: Build and push coffea-0.7
-      if: ${{ matrix.image_dir == 'coffea-base' }}
+      if: steps.gate.outputs.run == 'true' && matrix.image_dir == 'coffea-base'
       uses: docker/build-push-action@v6
       with:
         platforms: linux/amd64,linux/arm64
