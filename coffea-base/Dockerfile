@@ -9,12 +9,17 @@ ARG TARGETARCH
 ENV PYTHON_VERSION=${python}
 
 # Install dependencies for Miniforge
-# patch/autoconf/automake/libtool: the pip fastjet==3.4.0.1 sdist build (no
-# prebuilt wheel on linux-aarch64) patches the vendored FastJet C++ source
-# and then configures/builds it via autogen.sh, which needs all four.
+# patch/autoconf/automake/libtool: fastjet==3.4.0.1 has no prebuilt wheel on
+# linux-aarch64, so on arm64 it's built from source (see
+# build_fastjet_arm64.sh), which patches the vendored FastJet C++ source and
+# then configures/builds it via autogen.sh, which needs all four.
 # boost-devel: that same build configures CGAL in header-only mode
-# (--enable-cgal-header-only), and CGAL's headers pull in <boost/config.hpp>;
-# gmp/mpfr headers already come along with the toolchain, boost doesn't.
+# (--enable-cgal-header-only), and CGAL's headers pull in <boost/config.hpp>.
+# (gmp/mpfr/swig, also needed by that build, aren't reliably available this
+# way -- gmp/mpfr headers happen to come along with some but not all gxx
+# versions, and swig isn't in the AlmaLinux/EPEL repos enabled here -- so
+# all three are installed explicitly from conda-forge in the arm64 branch
+# below instead.)
 RUN dnf install -y epel-release && \
     dnf update -y && \
     dnf install -y wget bzip2 ca-certificates git wget libgfortran which zsh emacs vim htop man man-pages \
@@ -31,17 +36,29 @@ RUN wget "https://github.com/conda-forge/miniforge/releases/download/24.11.3-2/M
     echo ". /usr/local/etc/profile.d/conda.sh && conda activate base" >> ~/.bashrc
 
 COPY  environment.yaml /
+COPY  build_fastjet_arm64.sh /
 
 # CONDA_OVERRIDE_ARCHSPEC pins the solve to the generic baseline microarch
 # for TARGETARCH, so mamba doesn't pick a package build optimized for the
 # build host's CPU (e.g. x86_64_v3) that then SIGILLs on other hardware.
+# CPATH=/usr/include: the fastjet build (see build_fastjet_arm64.sh) compiles
+# CGAL header-only, which needs <boost/config.hpp>. The compiler doing that
+# build is conda's own gxx package, which ships a self-contained toolchain
+# with a private sysroot and never searches /usr/include -- so the
+# boost-devel headers installed via dnf above are otherwise invisible to it.
 RUN export G_SLICE=always-malloc \
+    && export CPATH=/usr/include \
     && case "${TARGETARCH}" in \
          amd64) archspec=x86_64 ;; \
          arm64) archspec=aarch64 ;; \
          *) echo "Unsupported TARGETARCH=${TARGETARCH}"; exit 1 ;; \
        esac \
     && mamba install -y python=${PYTHON_VERSION} \
+    && if [ "${TARGETARCH}" = "arm64" ]; then \
+         mamba install -y gxx swig gmp mpfr -c conda-forge \
+         && bash /build_fastjet_arm64.sh 3.4.0.1 ; \
+       fi \
+    && rm -f /build_fastjet_arm64.sh \
     && CONDA_OVERRIDE_ARCHSPEC=${archspec} mamba env update --file /environment.yaml \
     && mamba clean -tipy \
     && find /usr/local -type f -name '*.a' -delete \
