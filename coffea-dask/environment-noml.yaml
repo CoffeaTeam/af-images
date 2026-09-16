@@ -46,7 +46,7 @@ dependencies:
   - pip
   - rucio-clients
   - fastjet
-  - coffea=2026.7.0
+  - coffea=2026.9.0
   - fsspec-xrootd
   - pip:
     - coffea-workflow
