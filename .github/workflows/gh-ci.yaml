@@ -218,7 +218,7 @@ jobs:
         if [ "${push_legacy_aliases}" == "true" ] && [ -n "${legacy_flavour}" ]; then
           legacy_name="coffeateam/${legacy_flavour}-${distro}"
           legacy_image="${registry}/${legacy_name}"
-          legacy_osgimage="${harbor_project}/${legacy_flavour}-${distro}"
+          legacy_osgimage="hub.opensciencegrid.org/${harbor_project}/${legacy_flavour}-${distro}"
         fi
 
         if [ "${stable}" == "true" ]; then
