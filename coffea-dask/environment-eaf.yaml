@@ -55,7 +55,7 @@ dependencies:
   - pytorch_geometric
   - pip
   - rucio-clients
-  - coffea=2026.7.0
+  - coffea=2026.9.0
   - onnxruntime
   - fsspec-xrootd
   - pip:
