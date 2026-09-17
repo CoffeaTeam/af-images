@@ -9,16 +9,9 @@ ARG TARGETARCH
 ENV PYTHON_VERSION=${python}
 
 # Install dependencies for Miniforge
-# patch/autoconf/automake/libtool: the pip fastjet==3.4.0.1 sdist build (no
-# prebuilt wheel on linux-aarch64) patches the vendored FastJet C++ source
-# and then configures/builds it via autogen.sh, which needs all four.
-# boost-devel: that same build configures CGAL in header-only mode
-# (--enable-cgal-header-only), and CGAL's headers pull in <boost/config.hpp>;
-# gmp/mpfr headers already come along with the toolchain, boost doesn't.
 RUN dnf install -y epel-release && \
     dnf update -y && \
-    dnf install -y wget bzip2 ca-certificates git wget libgfortran which zsh emacs vim htop man man-pages \
-        patch autoconf automake libtool boost-devel && \
+    dnf install -y wget bzip2 ca-certificates git wget libgfortran which zsh emacs vim htop man man-pages && \
     dnf clean all
 
 # Download and install Miniforge
