@@ -51,15 +51,20 @@ RUN ln -s /usr/local/etc/grid-security /etc/grid-security && \
 
 # Python TLS clients (aiohttp/fsspec HTTP, requests, urllib) trust only the
 # Mozilla bundle from conda's ca-certificates, not the IGTF grid CAs that
-# ca-policy-lcg installs in /etc/grid-security/certificates. Grid storage served
-# over HTTPS then fails with CERTIFICATE_VERIFY_FAILED -- e.g.
-# xrootd-local.unl.edu:1094, whose certificate (Nov 2026) chains to the
-# IGTF-only root "emSign Root TLS CA - G1". Build one bundle = Mozilla + IGTF
-# and point OpenSSL (SSL_CERT_FILE) and requests (REQUESTS_CA_BUNDLE) at it.
+# ca-policy-lcg installs in /etc/grid-security/certificates. Since Nov 2026,
+# xrootd-local.unl.edu:1094 (AGC inputs over HTTPS) presents a chain ending in
+# the IGTF-only root "emSign Root TLS CA - G1", so those reads fail with
+# CERTIFICATE_VERIFY_FAILED. Add just that one root (fingerprint-pinned) to a
+# copy of the Mozilla bundle and point OpenSSL (SSL_CERT_FILE) and requests
+# (REQUESTS_CA_BUNDLE) at it. To trust another grid root, add it the same way.
+ARG EXTRA_ROOT=/etc/grid-security/certificates/emSignRootTLSCAG1.pem
+ARG EXTRA_ROOT_SHA256=CE:F7:1E:70:B7:C2:9A:DD:F6:C3:0C:D1:9E:61:4B:38:FD:5F:02:A4:35:A0:EE:DD:D0:08:7E:18:3D:10:1A:51
 RUN mozilla="$(python -c 'import ssl; print(ssl.get_default_verify_paths().openssl_cafile)')" \
     && test -s "$mozilla" \
-    && cat "$mozilla" /etc/grid-security/certificates/*.pem > /usr/local/etc/af-ca-bundle.pem \
-    && python -c "import ssl; c = ssl.create_default_context(cafile='/usr/local/etc/af-ca-bundle.pem'); n = len(c.get_ca_certs()); print('af-ca-bundle.pem:', n, 'CAs'); assert n > 200, n"
+    && fp="$(openssl x509 -in "$EXTRA_ROOT" -noout -fingerprint -sha256 | cut -d= -f2)" \
+    && { [ "$fp" = "$EXTRA_ROOT_SHA256" ] || { echo "unexpected fingerprint for $EXTRA_ROOT: $fp"; exit 1; }; } \
+    && cat "$mozilla" "$EXTRA_ROOT" > /usr/local/etc/af-ca-bundle.pem \
+    && openssl verify -CAfile /usr/local/etc/af-ca-bundle.pem "$EXTRA_ROOT"
 
 ENV SSL_CERT_FILE=/usr/local/etc/af-ca-bundle.pem \
     REQUESTS_CA_BUNDLE=/usr/local/etc/af-ca-bundle.pem
