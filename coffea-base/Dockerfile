@@ -48,3 +48,18 @@ RUN ln -s /usr/local/etc/grid-security /etc/grid-security && \
     tar -xz --strip-components=1 --directory=/etc/grid-security --wildcards */vomses */vomsdir && \
     cp /etc/grid-security/vomses /etc && \
     mv /etc/grid-security/vomses /usr/local/etc/
+
+# Python TLS clients (aiohttp/fsspec HTTP, requests, urllib) trust only the
+# Mozilla bundle from conda's ca-certificates, not the IGTF grid CAs that
+# ca-policy-lcg installs in /etc/grid-security/certificates. Grid storage served
+# over HTTPS then fails with CERTIFICATE_VERIFY_FAILED -- e.g.
+# xrootd-local.unl.edu:1094, whose certificate (Nov 2026) chains to the
+# IGTF-only root "emSign Root TLS CA - G1". Build one bundle = Mozilla + IGTF
+# and point OpenSSL (SSL_CERT_FILE) and requests (REQUESTS_CA_BUNDLE) at it.
+RUN mozilla="$(python -c 'import ssl; print(ssl.get_default_verify_paths().openssl_cafile)')" \
+    && test -s "$mozilla" \
+    && cat "$mozilla" /etc/grid-security/certificates/*.pem > /usr/local/etc/af-ca-bundle.pem \
+    && python -c "import ssl; c = ssl.create_default_context(cafile='/usr/local/etc/af-ca-bundle.pem'); n = len(c.get_ca_certs()); print('af-ca-bundle.pem:', n, 'CAs'); assert n > 200, n"
+
+ENV SSL_CERT_FILE=/usr/local/etc/af-ca-bundle.pem \
+    REQUESTS_CA_BUNDLE=/usr/local/etc/af-ca-bundle.pem
