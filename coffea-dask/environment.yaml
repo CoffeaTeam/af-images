@@ -51,7 +51,8 @@ dependencies:
   - hist
     # ML
   - xgboost
-  - pytorch
+  # CUDA build; needs CONDA_OVERRIDE_CUDA at solve time (see Dockerfile)
+  - pytorch=*=cuda*
   - pytorch_geometric
   - pip
   - rucio-clients
