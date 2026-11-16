@@ -20,6 +20,9 @@ ARG release
 ARG TARGETARCH
 ARG ENV_YAML=environment.yaml
 ARG NODAK=0
+# Max CUDA version the solver may assume the target driver supports. See the
+# solve step below; empty disables it (CPU-only pytorch).
+ARG CUDA_OVERRIDE=12.6
 
 ENV PYTHON_VERSION=${python}
 
@@ -51,6 +54,10 @@ RUN test -f "/tmp/env/${ENV_YAML}" \
 # CONDA_OVERRIDE_ARCHSPEC pins the solve to the generic baseline microarch
 # for TARGETARCH, so mamba doesn't pick a package build optimized for the
 # build host's CPU (e.g. x86_64_v3) that then SIGILLs on other hardware.
+# CONDA_OVERRIDE_CUDA does the same for the __cuda virtual package: CI
+# runners have no GPU, so without it mamba can only pick CPU-only pytorch
+# builds (issue #89). With it, conda-forge's CUDA builds become eligible
+# and the yaml can request them with `pytorch=*=cuda*`.
 RUN export G_SLICE=always-malloc \
     && case "${TARGETARCH}" in \
          amd64) archspec=x86_64 ;; \
@@ -87,7 +94,7 @@ RUN export G_SLICE=always-malloc \
     && echo "=== declared dask-awkward capability: $(cat /etc/af_dask_awkward)" \
     && echo "=== dask specs:" \
     && grep -nE '^[[:space:]]*-[[:space:]]*dask' ${ENV_FILE} \
-    && CONDA_OVERRIDE_ARCHSPEC=${archspec} mamba env update --file ${ENV_FILE} \
+    && CONDA_OVERRIDE_CUDA=${CUDA_OVERRIDE} CONDA_OVERRIDE_ARCHSPEC=${archspec} mamba env update --file ${ENV_FILE} \
     && rm -f /env-nodak.yaml \
     && rm -rf /tmp/env \
     && mamba clean -tipy \
